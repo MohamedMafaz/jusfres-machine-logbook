@@ -14,6 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
+      maintenance_entries: {
+        Row: {
+          battery_end: number | null
+          battery_start: number | null
+          boxes_113: number | null
+          boxes_88: number | null
+          boxes_custom: number | null
+          created_at: string
+          cup_availability: number | null
+          current_step: number
+          date_of_entry: string
+          distance: number | null
+          duration_minutes: number | null
+          end_location: string | null
+          end_time: string | null
+          filled_by: string
+          filled_cleaning_water: boolean | null
+          filled_refrigerant_water: boolean | null
+          id: string
+          issues_errors: string | null
+          items_carried: string | null
+          lid_availability: number | null
+          odometer_end: number | null
+          odometer_start: number | null
+          orange_refill: number | null
+          refrigerant_water_status: string | null
+          start_location: string | null
+          start_time: string | null
+          step1_completed: boolean | null
+          step1_completed_at: string | null
+          step2_completed: boolean | null
+          step2_completed_at: string | null
+          step3_completed: boolean | null
+          step3_completed_at: string | null
+          tasks_completed: string | null
+          temperature: number | null
+          time_spent_machine: number | null
+          updated_at: string
+          water_cleaning_status: string | null
+        }
+        Insert: {
+          battery_end?: number | null
+          battery_start?: number | null
+          boxes_113?: number | null
+          boxes_88?: number | null
+          boxes_custom?: number | null
+          created_at?: string
+          cup_availability?: number | null
+          current_step?: number
+          date_of_entry?: string
+          distance?: number | null
+          duration_minutes?: number | null
+          end_location?: string | null
+          end_time?: string | null
+          filled_by: string
+          filled_cleaning_water?: boolean | null
+          filled_refrigerant_water?: boolean | null
+          id?: string
+          issues_errors?: string | null
+          items_carried?: string | null
+          lid_availability?: number | null
+          odometer_end?: number | null
+          odometer_start?: number | null
+          orange_refill?: number | null
+          refrigerant_water_status?: string | null
+          start_location?: string | null
+          start_time?: string | null
+          step1_completed?: boolean | null
+          step1_completed_at?: string | null
+          step2_completed?: boolean | null
+          step2_completed_at?: string | null
+          step3_completed?: boolean | null
+          step3_completed_at?: string | null
+          tasks_completed?: string | null
+          temperature?: number | null
+          time_spent_machine?: number | null
+          updated_at?: string
+          water_cleaning_status?: string | null
+        }
+        Update: {
+          battery_end?: number | null
+          battery_start?: number | null
+          boxes_113?: number | null
+          boxes_88?: number | null
+          boxes_custom?: number | null
+          created_at?: string
+          cup_availability?: number | null
+          current_step?: number
+          date_of_entry?: string
+          distance?: number | null
+          duration_minutes?: number | null
+          end_location?: string | null
+          end_time?: string | null
+          filled_by?: string
+          filled_cleaning_water?: boolean | null
+          filled_refrigerant_water?: boolean | null
+          id?: string
+          issues_errors?: string | null
+          items_carried?: string | null
+          lid_availability?: number | null
+          odometer_end?: number | null
+          odometer_start?: number | null
+          orange_refill?: number | null
+          refrigerant_water_status?: string | null
+          start_location?: string | null
+          start_time?: string | null
+          step1_completed?: boolean | null
+          step1_completed_at?: string | null
+          step2_completed?: boolean | null
+          step2_completed_at?: string | null
+          step3_completed?: boolean | null
+          step3_completed_at?: string | null
+          tasks_completed?: string | null
+          temperature?: number | null
+          time_spent_machine?: number | null
+          updated_at?: string
+          water_cleaning_status?: string | null
+        }
+        Relationships: []
+      }
       paytags: {
         Row: {
           amount: string | null

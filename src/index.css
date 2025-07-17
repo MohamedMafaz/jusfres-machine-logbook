@@ -8,35 +8,58 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Industrial maintenance app color scheme */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary: Industrial blue */
+    --primary: 211 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 211 85% 40%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary: Professional gray-blue */
+    --secondary: 210 16% 92%;
+    --secondary-foreground: 215 25% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 16% 94%;
+    --muted-foreground: 215 12% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Maintenance green */
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Warning: Machine orange */
+    --warning: 25 95% 53%;
+    --warning-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 211 85% 45%;
+
+    --radius: 0.75rem;
+
+    /* Custom maintenance app colors */
+    --maintenance-primary: 211 85% 45%;
+    --maintenance-secondary: 142 76% 36%;
+    --maintenance-accent: 25 95% 53%;
+    --maintenance-neutral: 215 12% 45%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
+    --gradient-maintenance: linear-gradient(135deg, hsl(var(--maintenance-primary)), hsl(var(--maintenance-secondary)));
+
+    /* Shadows */
+    --shadow-maintenance: 0 4px 20px -2px hsl(var(--primary) / 0.1);
+    --shadow-card: 0 2px 8px -1px hsl(215 25% 15% / 0.08);
 
     --sidebar-background: 0 0% 98%;
 

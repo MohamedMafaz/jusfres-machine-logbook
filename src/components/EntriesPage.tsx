@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { MaintenanceEntry } from '@/types/maintenance';
 import { 
@@ -14,19 +16,33 @@ import {
   User, 
   CheckCircle, 
   Clock,
-  AlertCircle 
+  AlertCircle,
+  X,
+  Thermometer,
+  Battery,
+  Package,
+  Droplets,
+  Wrench,
+  AlertTriangle,
+  Download
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from '@/hooks/use-toast';
 
 interface EntriesPageProps {
   onBack: () => void;
 }
 
 const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
+  const isMobile = useIsMobile();
   const [entries, setEntries] = useState<MaintenanceEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<MaintenanceEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedEntry, setSelectedEntry] = useState<MaintenanceEntry | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+
 
   useEffect(() => {
     loadEntries();
@@ -93,13 +109,352 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
     }
   };
 
+  const exportToCSV = () => {
+    if (filteredEntries.length === 0) {
+      toast({
+        title: "No Data",
+        description: "No entries to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Define CSV headers
+    const headers = [
+      'User',
+      'Date',
+      'Start Location',
+      'End Location',
+      'Distance (km)',
+      'Start Time',
+      'End Time',
+      'Duration (minutes)',
+      'Machine Time (minutes)',
+      'Temperature (°C)',
+      'Battery Start (%)',
+      'Battery End (%)',
+      'Odometer Start (km)',
+      'Odometer End (km)',
+      'Boxes (88)',
+      'Boxes (113)',
+      'Custom Boxes',
+      'Orange Refill',
+      'Cup Availability',
+      'Lid Availability',
+      'Cleaning Water Status',
+      'Refrigerant Water Status',
+      'Filled Cleaning Water',
+      'Filled Refrigerant Water',
+      'Items Carried',
+      'Tasks Completed',
+      'Issues/Errors',
+      'Status',
+      'Created At'
+    ];
+
+    // Convert entries to CSV rows
+    const csvRows = [headers.join(',')];
+    
+    filteredEntries.forEach(entry => {
+      const status = entry.step3_completed ? 'Complete' : 
+                    entry.step2_completed ? 'Step 3 Pending' : 
+                    entry.step1_completed ? 'Step 2 Pending' : 'Step 1 Pending';
+      
+      const row = [
+        `"${entry.filled_by || ''}"`,
+        `"${entry.date_of_entry || ''}"`,
+        `"${entry.start_location || ''}"`,
+        `"${entry.end_location || ''}"`,
+        entry.distance || '',
+        `"${entry.start_time || ''}"`,
+        `"${entry.end_time || ''}"`,
+        entry.duration_minutes || '',
+        entry.time_spent_machine || '',
+        entry.temperature || '',
+        entry.battery_start || '',
+        entry.battery_end || '',
+        entry.odometer_start || '',
+        entry.odometer_end || '',
+        entry.orange_88_count ?? entry.boxes_88 ?? '',
+        entry.orange_113_count ?? entry.boxes_113 ?? '',
+        entry.orange_custom_box_count ?? entry.boxes_custom ?? '',
+        entry.orange_refill || '',
+        entry.cup_availability || '',
+        entry.lid_availability || '',
+        `"${entry.water_cleaning_status || ''}"`,
+        `"${entry.refrigerant_water_status || ''}"`,
+        entry.filled_cleaning_water ? 'Yes' : 'No',
+        entry.filled_refrigerant_water ? 'Yes' : 'No',
+        `"${Array.isArray(entry.items_carried)
+            ? entry.items_carried.join(', ')
+            : (typeof entry.items_carried === 'string' && entry.items_carried.includes(',')
+                ? entry.items_carried.split(',').map(i => i.trim()).filter(Boolean).join(', ')
+                : (entry.items_carried || ''))}"`,
+        `"${entry.tasks_completed || ''}"`,
+        `"${entry.issues_errors || ''}"`,
+        `"${status}"`,
+        `"${entry.created_at || ''}"`
+      ];
+      
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `maintenance_entries_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    toast({
+      title: "Export Successful",
+      description: `${filteredEntries.length} entries exported to CSV.`,
+    });
+  };
+
+  const handleEntryClick = (entry: MaintenanceEntry) => {
+    setSelectedEntry(entry);
+    setShowDetails(true);
+  };
+
+  const renderMobileCard = (entry: MaintenanceEntry) => (
+    <Card 
+      key={entry.id} 
+      className="cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => handleEntryClick(entry)}
+    >
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">{entry.filled_by}</span>
+            </div>
+            {getStatusBadge(entry)}
+          </div>
+
+          {/* Date */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar className="w-4 h-4" />
+            {new Date(entry.date_of_entry || '').toLocaleDateString()}
+          </div>
+
+          {/* Locations */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">From:</span>
+              <span>{entry.start_location || '-'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">To:</span>
+              <span>{entry.end_location || '-'}</span>
+            </div>
+          </div>
+
+          {/* Quick Info */}
+          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+            {entry.temperature && (
+              <div className="flex items-center gap-1">
+                <Thermometer className="w-3 h-3" />
+                <span>{entry.temperature}°C</span>
+              </div>
+            )}
+            {entry.distance && (
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span>{entry.distance}km</span>
+              </div>
+            )}
+            {entry.duration_minutes && (
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>{entry.duration_minutes}min</span>
+              </div>
+            )}
+            {entry.time_spent_machine && (
+              <div className="flex items-center gap-1">
+                <Wrench className="w-3 h-3" />
+                <span>{entry.time_spent_machine}min</span>
+              </div>
+            )}
+          </div>
+
+          {/* Tasks Preview */}
+          {entry.tasks_completed && (
+            <div className="text-sm">
+              <span className="font-medium">Tasks:</span>
+              <p className="text-muted-foreground truncate">{entry.tasks_completed}</p>
+            </div>
+          )}
+
+          {/* Issues Preview */}
+          {entry.issues_errors && (
+            <div className="text-sm">
+              <span className="font-medium text-orange-600">Issues:</span>
+              <p className="text-muted-foreground truncate">{entry.issues_errors}</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderDetailsModal = () => (
+    <Dialog open={showDetails} onOpenChange={setShowDetails}>
+      <DialogContent className={`${isMobile ? 'w-[98vw] max-w-none px-1 py-2' : 'max-w-2xl'} max-h-[95vh] overflow-y-auto`}>
+        <DialogHeader>
+          <DialogTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : 'text-xl'}`}>
+            <Calendar className="w-5 h-5" />
+            Maintenance Entry Details
+          </DialogTitle>
+        </DialogHeader>
+        {selectedEntry && (
+          <div className="space-y-6">
+            {/* Basic Info */}
+            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}> 
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">User:</span>
+                  <span>{selectedEntry.filled_by}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">Date:</span>
+                  <span>{new Date(selectedEntry.date_of_entry || '').toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">Status:</span>
+                  {getStatusBadge(selectedEntry)}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">Start:</span>
+                  <span>{selectedEntry.start_location || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">End:</span>
+                  <span>{selectedEntry.end_location || '-'}</span>
+                </div>
+                {selectedEntry.distance && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">Distance:</span>
+                    <span>{selectedEntry.distance} km</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <Separator />
+            {/* Times */}
+            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}> 
+              <div className="space-y-2">
+                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Clock className="w-4 h-4" /> Time Information </h3>
+                <div className="space-y-1 text-sm">
+                  <div>Start: {selectedEntry.start_time || '-'}</div>
+                  <div>End: {selectedEntry.end_time || '-'}</div>
+                  {selectedEntry.duration_minutes ? (
+                    <div>Duration: {selectedEntry.duration_minutes} minutes</div>
+                  ) : null}
+                  {selectedEntry.time_spent_machine ? (
+                    <div>Machine Time: {selectedEntry.time_spent_machine} minutes</div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Thermometer className="w-4 h-4" /> Environmental Data </h3>
+                <div className="space-y-1 text-sm">
+                  <div>Temperature: {selectedEntry.temperature || '-'}°C</div>
+                  <div>Battery Start: {selectedEntry.battery_start || '-'}%</div>
+                  <div>Battery End: {selectedEntry.battery_end || '-'}%</div>
+                  <div>Odometer Start: {selectedEntry.odometer_start || '-'} km</div>
+                  <div>Odometer End: {selectedEntry.odometer_end || '-'} km</div>
+                </div>
+              </div>
+            </div>
+            <Separator />
+            {/* Inventory */}
+            <div className="space-y-2">
+              <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Package className="w-4 h-4" /> Inventory & Supplies </h3>
+              <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 md:grid-cols-4'}`}> 
+                <div>Boxes (88): {selectedEntry.orange_88_count ?? selectedEntry.boxes_88 ?? '-'}</div>
+                <div>Boxes (113): {selectedEntry.orange_113_count ?? selectedEntry.boxes_113 ?? '-'}</div>
+                <div>Custom Boxes: {selectedEntry.orange_custom_box_count ?? selectedEntry.boxes_custom ?? '-'}</div>
+                <div>Orange Refill: {selectedEntry.orange_refill || '-'}</div>
+                <div>Cup Availability: {selectedEntry.cup_availability || '-'}</div>
+                <div>Lid Availability: {selectedEntry.lid_availability || '-'}</div>
+              </div>
+            </div>
+            <Separator />
+            {/* Water Status */}
+            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}> 
+              <div className="space-y-2">
+                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Droplets className="w-4 h-4" /> Water Management </h3>
+                <div className="space-y-1 text-sm">
+                  <div>Cleaning Water: {selectedEntry.water_cleaning_status || '-'}</div>
+                  <div>Refrigerant Water: {selectedEntry.refrigerant_water_status || '-'}</div>
+                  <div>Filled Cleaning: {typeof selectedEntry.filled_cleaning_water === 'string' ? selectedEntry.filled_cleaning_water : (selectedEntry.filled_cleaning_water === true ? 'Yes' : selectedEntry.filled_cleaning_water === false ? 'No' : '-')}</div>
+                  <div>Filled Refrigerant: {typeof selectedEntry.filled_refrigerant_water === 'string' ? selectedEntry.filled_refrigerant_water : (selectedEntry.filled_refrigerant_water === true ? 'Yes' : selectedEntry.filled_refrigerant_water === false ? 'No' : '-')}</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Package className="w-4 h-4" /> Items Carried </h3>
+                <div className="text-sm"> {
+                  selectedEntry.items_carried
+                    ? (Array.isArray(selectedEntry.items_carried)
+                        ? selectedEntry.items_carried.join(', ')
+                        : (typeof selectedEntry.items_carried === 'string' && selectedEntry.items_carried.includes(',')
+                            ? selectedEntry.items_carried.split(',').map(i => i.trim()).filter(Boolean).join(', ')
+                            : selectedEntry.items_carried))
+                    : '-' 
+                } </div>
+              </div>
+            </div>
+            <Separator />
+            {/* Tasks */}
+            {selectedEntry.tasks_completed && (
+              <>
+                <div className="space-y-2">
+                  <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <CheckCircle className="w-4 h-4" /> Tasks Completed </h3>
+                  <div className="text-sm bg-green-50 p-3 rounded-lg"> {selectedEntry.tasks_completed} </div>
+                </div>
+                <Separator />
+              </>
+            )}
+            {/* Issues */}
+            {selectedEntry.issues_errors && (
+              <div className="space-y-2">
+                <h3 className={`font-semibold flex items-center gap-2 text-orange-600 ${isMobile ? 'text-base' : ''}`}> <AlertTriangle className="w-4 h-4" /> Issues & Errors </h3>
+                <div className="text-sm bg-orange-50 p-3 rounded-lg"> {selectedEntry.issues_errors} </div>
+              </div>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 space-y-6">
         
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <Button variant="outline" onClick={onBack}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
@@ -109,6 +464,10 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
               <p className="text-muted-foreground">All maintenance records from the team</p>
             </div>
           </div>
+          <Button onClick={exportToCSV} className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
         </div>
 
         {/* Search */}
@@ -126,7 +485,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
           </CardContent>
         </Card>
 
-        {/* Entries Table */}
+        {/* Entries */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -149,7 +508,13 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
                   {searchTerm ? 'No entries match your search criteria.' : 'No maintenance entries found.'}
                 </AlertDescription>
               </Alert>
+            ) : isMobile ? (
+              // Mobile Cards View
+              <div className="space-y-4">
+                {filteredEntries.map(renderMobileCard)}
+              </div>
             ) : (
+              // Desktop Table View
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -166,7 +531,11 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
                   </TableHeader>
                   <TableBody>
                     {filteredEntries.map((entry) => (
-                      <TableRow key={entry.id}>
+                      <TableRow 
+                        key={entry.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleEntryClick(entry)}
+                      >
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-muted-foreground" />
@@ -218,6 +587,9 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
             )}
           </CardContent>
         </Card>
+
+        {/* Details Modal */}
+        {renderDetailsModal()}
 
       </div>
     </div>

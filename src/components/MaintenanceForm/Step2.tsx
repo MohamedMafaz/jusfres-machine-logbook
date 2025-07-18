@@ -70,13 +70,29 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
             {/* End Location */}
             <div className="space-y-2">
               <Label htmlFor="end_location">End Location</Label>
-              <Input
+              <select
                 id="end_location"
                 value={formData.end_location || ''}
                 onChange={(e) => onUpdate({ end_location: e.target.value })}
-                placeholder="Enter ending location"
                 required
-              />
+                className="w-full border rounded px-3 py-2 bg-background text-foreground"
+              >
+                <option value="" disabled>Select ending location</option>
+                <option value="Husky">Husky</option>
+                <option value="Sabzi Mandi">Sabzi Mandi</option>
+                <option value="Translink China">Translink China</option>
+                <option value="Metro China">Metro China</option>
+                <option value="Capstan Station">Capstan Station</option>
+                <option value="Edmonds China">Edmonds China</option>
+                <option value="Surrey China">Surrey China</option>
+                <option value="Canadian Tire">Canadian Tire</option>
+                <option value="Rupert Station">Rupert Station</option>
+                <option value="Lougheed Station">Lougheed Station</option>
+                <option value="UBC">UBC</option>
+                <option value="Warehouse">Warehouse</option>
+                <option value="Ashok sir's House">Ashok sir's House</option>
+                <option value="Bradner's (Cold Storage)">Bradner's (Cold Storage)</option>
+              </select>
             </div>
 
             {/* End Time */}

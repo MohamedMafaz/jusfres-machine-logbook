@@ -23,16 +23,24 @@ export interface MaintenanceEntry {
   // Step 3 fields
   cup_availability?: number;
   lid_availability?: number;
+  lid_availability_type?: string;
   tasks_completed?: string;
   issues_errors?: string;
   orange_refill?: number;
+  orange_refill_type?: string;
+  orange_refill_tasks?: string[];
   temperature?: number;
   distance?: number;
   duration_minutes?: number;
   time_spent_machine?: number;
-  boxes_88?: number;
-  boxes_113?: number;
-  boxes_custom?: number;
+  orange_88_count?: number;
+  orange_113_count?: number;
+  orange_custom_box_count?: number;
+  orange_custom_count_per_box?: number;
+  // Aliases for compatibility with UI
+  boxes_88?: number; // alias for orange_88_count
+  boxes_113?: number; // alias for orange_113_count
+  boxes_custom?: number; // alias for orange_custom_box_count
   water_cleaning_status?: string;
   refrigerant_water_status?: string;
   filled_cleaning_water?: boolean;

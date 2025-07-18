@@ -22,7 +22,7 @@ const Step1: React.FC<Step1Props> = ({ formData, onUpdate, onSubmit, isLoading }
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
-      
+
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex justify-center">
@@ -49,7 +49,7 @@ const Step1: React.FC<Step1Props> = ({ formData, onUpdate, onSubmit, isLoading }
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            
+
             {/* Filled By - Auto-filled and read-only */}
             <div className="space-y-2">
               <Label htmlFor="filled_by">Filled By</Label>
@@ -76,13 +76,29 @@ const Step1: React.FC<Step1Props> = ({ formData, onUpdate, onSubmit, isLoading }
             {/* Start Location */}
             <div className="space-y-2">
               <Label htmlFor="start_location">Start Location</Label>
-              <Input
+              <select
                 id="start_location"
                 value={formData.start_location || ''}
                 onChange={(e) => onUpdate({ start_location: e.target.value })}
-                placeholder="Enter starting location"
                 required
-              />
+                className="w-full border rounded px-3 py-2 bg-background text-foreground"
+              >
+                <option value="" disabled>Select starting location</option>
+                <option value="Husky">Husky</option>
+                <option value="Sabzi Mandi">Sabzi Mandi</option>
+                <option value="Translink China">Translink China</option>
+                <option value="Metro China">Metro China</option>
+                <option value="Capstan Station">Capstan Station</option>
+                <option value="Edmonds China">Edmonds China</option>
+                <option value="Surrey China">Surrey China</option>
+                <option value="Canadian Tire">Canadian Tire</option>
+                <option value="Rupert Station">Rupert Station</option>
+                <option value="Lougheed Station">Lougheed Station</option>
+                <option value="UBC">UBC</option>
+                <option value="Warehouse">Warehouse</option>
+                <option value="Ashok sir's House">Ashok sir's House</option>
+                <option value="Bradner's (Cold Storage)">Bradner's (Cold Storage)</option>
+              </select>
             </div>
 
             {/* Start Time */}
@@ -137,18 +153,48 @@ const Step1: React.FC<Step1Props> = ({ formData, onUpdate, onSubmit, isLoading }
             {/* Items Carried at Start */}
             <div className="space-y-2">
               <Label htmlFor="items_carried">Items Carried at Start</Label>
-              <Textarea
-                id="items_carried"
-                value={formData.items_carried || ''}
-                onChange={(e) => onUpdate({ items_carried: e.target.value })}
-                placeholder="List items being carried..."
-                rows={3}
-              />
+              <div className="space-y-1">
+                {[
+                  'Boxes of Oranges',
+                  'Black Bins & Cleaning Materials',
+                  'Empty Bins',
+                  'Clean Water',
+                  'Machine Parts',
+                ].map((item) => {
+                  // Ensure items_carried is always treated as an array for checkboxes
+                  const carriedArray = Array.isArray(formData.items_carried)
+                    ? formData.items_carried
+                    : (formData.items_carried ? formData.items_carried.split(',').map(i => i.trim()) : []);
+                  return (
+                    <label key={item} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        value={item}
+                        checked={carriedArray.includes(item)}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          let newItems = [...carriedArray];
+                          if (isChecked) {
+                            if (!newItems.includes(item)) newItems.push(item);
+                          } else {
+                            newItems = newItems.filter(i => i !== item);
+                          }
+                          // Remove empty strings and duplicates, then join
+                          const cleanItems = Array.from(new Set(newItems.map(i => i.trim()).filter(Boolean)));
+                          onUpdate({ items_carried: cleanItems.join(', ') });
+                        }}
+                      />
+                      <span>{item}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
 
+
             {/* Submit Button */}
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-primary hover:bg-primary-hover"
               disabled={isLoading}
             >

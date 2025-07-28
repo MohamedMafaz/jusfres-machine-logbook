@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, Clock, Gauge, Battery, CheckCircle } from 'lucide-react';
 import { MaintenanceEntry } from '@/types/maintenance';
+import { Slider } from "@/components/ui/slider";
 
 interface Step2Props {
   formData: Partial<MaintenanceEntry>;
@@ -131,16 +132,16 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
               <Label htmlFor="battery_end" className="flex items-center gap-2">
                 <Battery className="w-4 h-4" />
                 Battery/Charge at End (%)
+                <span className="ml-2 font-mono text-sm text-muted-foreground">{formData.battery_end ?? 0}%</span>
               </Label>
-              <Input
+              <Slider
                 id="battery_end"
-                type="number"
-                min="0"
-                max="100"
-                value={formData.battery_end || ''}
-                onChange={(e) => onUpdate({ battery_end: parseInt(e.target.value) || 0 })}
-                placeholder="0"
-                required
+                min={0}
+                max={100}
+                step={1}
+                value={[formData.battery_end ?? 0]}
+                onValueChange={([val]) => onUpdate({ battery_end: val })}
+                className="w-full"
               />
             </div>
 

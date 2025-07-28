@@ -95,6 +95,20 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
               </div>
             </div>
 
+            {/* Number of Oranges Placed */}
+            <div className="space-y-2">
+              <Label htmlFor="oranges_placed">Number of Oranges Placed</Label>
+              <Input
+                id="oranges_placed"
+                type="number"
+                min={0}
+                value={formData.oranges_placed ?? ''}
+                onChange={e => onUpdate({ oranges_placed: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+                required
+              />
+            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="lid_availability">Lid Availability (Reels)</Label>
@@ -116,74 +130,6 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
               </div>
             </div>
 
-
-            <div className="space-y-4">
-              <Label>Orange Refill</Label>
-
-              {/* 88 Count Boxes */}
-              <div className="space-y-1">
-                <Label htmlFor="orange_88_count">88 Count Boxes</Label>
-                <Input
-                  id="orange_88_count"
-                  type="number"
-                  placeholder="Enter number of 88-count boxes"
-                  value={formData.orange_88_count ?? ''}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    onUpdate({ orange_88_count: isNaN(value) ? 0 : value });
-                  }}
-                />
-              </div>
-
-              {/* 113 Count Boxes */}
-              <div className="space-y-1">
-                <Label htmlFor="orange_113_count">113 Count Boxes</Label>
-                <Input
-                  id="orange_113_count"
-                  type="number"
-                  placeholder="Enter number of 113-count boxes"
-                  value={formData.orange_113_count ?? ''}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    onUpdate({ orange_113_count: isNaN(value) ? 0 : value });
-                  }}
-                />
-              </div>
-
-              {/* Custom Boxes */}
-              <div className="space-y-1">
-                <Label htmlFor="orange_custom_box_count">Custom Boxes</Label>
-                <Input
-                  id="orange_custom_box_count"
-                  type="number"
-                  placeholder="Enter number of custom boxes"
-                  value={formData.orange_custom_box_count ?? ''}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    onUpdate({ orange_custom_box_count: isNaN(value) ? 0 : value });
-                  }}
-                />
-              </div>
-
-              {/* Count per Custom Box */}
-              {formData.orange_custom_box_count > 0 && (
-                <div className="space-y-1">
-                  <Label htmlFor="orange_custom_count_per_box">Count per Custom Box</Label>
-                  <Input
-                    id="orange_custom_count_per_box"
-                    type="number"
-                    placeholder="Enter count per custom box"
-                    value={formData.orange_custom_count_per_box ?? ''}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      onUpdate({ orange_custom_count_per_box: isNaN(value) ? 0 : value });
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
-
             <div className="space-y-2">
               <Label htmlFor="temperature" className="flex items-center gap-2">
                 <Thermometer className="w-4 h-4" />
@@ -198,6 +144,8 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
                 placeholder="0.00"
               />
             </div>
+
+
 
           </CardContent>
         </Card>
@@ -218,9 +166,8 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
                   { label: 'Removed Peels', value: 'removed_peels' },
                   { label: 'Cleaned the machine', value: 'cleaned_machine' },
                   { label: 'Kept cups and lids', value: 'kept_cups_lids' },
-                  { label: 'Parts changed', value: 'parts_changed' },
-                  { label: 'Cleaned', value: 'cleaned' },
-                  { label: 'Refill cups and lids', value: 'refill_cups_lids' }
+                  { label: 'Parts changed', value: 'parts_changed' }
+                  
                 ].map((item) => (
                   <label key={item.value} className="flex items-center space-x-2">
                     <input
@@ -258,12 +205,12 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
                   'Payment system error',
                   'Machine error during operation - and part inspection',
                   'Cashless device error',
-                  'Payment device not responding',
-                  'Fallen cup error',
+                  'Nayax Error',
+                  
                   'Nut fallen inside machine',
-                  'Cup error',
+           
                   'Suspected internal leak',
-                  'Cup not falling',
+        
                   'Machine error during operation',
                   'Required cleaning and part inspection',
                 ].map((issue) => (

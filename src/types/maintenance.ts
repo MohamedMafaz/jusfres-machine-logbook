@@ -19,6 +19,7 @@ export interface MaintenanceEntry {
   end_time?: string;
   odometer_end?: number;
   battery_end?: number;
+  oranges_placed?: number;
   
   // Step 3 fields
   cup_availability?: number;

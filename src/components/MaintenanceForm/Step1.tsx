@@ -183,6 +183,7 @@ const Step1: React.FC<Step1Props> = ({
                   "Black Bins & Cleaning Materials",
                   "Empty Bins",
                   "Clean Water",
+                  "Cups and Lids",
                   "Machine Parts",
                 ].map((item) => {
                   // Ensure items_carried is always treated as an array for checkboxes
@@ -222,7 +223,7 @@ const Step1: React.FC<Step1Props> = ({
             </div>
 
             <div className="space-y-4">
-              <Label>Orange Refill</Label>
+              <Label>Boxes of Oranges</Label>
 
               {/* 88 Count Boxes */}
               <div className="space-y-1">

@@ -246,7 +246,7 @@ const Dashboard: React.FC = () => {
               <ClipboardList className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">JusFres Maintenance</h1>
+              <h1 className="text-2xl font-bold text-foreground">JusFres Maintenance Application</h1>
               <p className="text-muted-foreground">Machine Logbook System</p>
             </div>
           </div>

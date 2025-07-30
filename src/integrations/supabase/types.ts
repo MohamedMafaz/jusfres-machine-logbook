@@ -39,6 +39,7 @@ export type Database = {
           odometer_end: number | null
           odometer_start: number | null
           orange_refill: number | null
+          oranges_placed: number | null
           refrigerant_water_status: string | null
           start_location: string | null
           start_time: string | null
@@ -78,6 +79,7 @@ export type Database = {
           odometer_end?: number | null
           odometer_start?: number | null
           orange_refill?: number | null
+          oranges_placed?: number | null
           refrigerant_water_status?: string | null
           start_location?: string | null
           start_time?: string | null
@@ -117,6 +119,7 @@ export type Database = {
           odometer_end?: number | null
           odometer_start?: number | null
           orange_refill?: number | null
+          oranges_placed?: number | null
           refrigerant_water_status?: string | null
           start_location?: string | null
           start_time?: string | null

@@ -75,7 +75,7 @@ const Step1: React.FC<Step1Props> = ({
 
             {/* Date of Entry */}
             <div className="space-y-2">
-              <Label htmlFor="date_of_entry">Date of Entry</Label>
+              <Label htmlFor="date_of_entry">Date of Entry *</Label>
               <Input
                 id="date_of_entry"
                 type="date"
@@ -87,7 +87,7 @@ const Step1: React.FC<Step1Props> = ({
 
             {/* Start Location */}
             <div className="space-y-2">
-              <Label htmlFor="start_location">Start Location</Label>
+              <Label htmlFor="start_location">Start Location *</Label>
               <select
                 id="start_location"
                 value={formData.start_location || ""}
@@ -121,7 +121,7 @@ const Step1: React.FC<Step1Props> = ({
             <div className="space-y-2">
               <Label htmlFor="start_time" className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                Start Time
+                Start Time *
               </Label>
               <Input
                 id="start_time"
@@ -139,7 +139,7 @@ const Step1: React.FC<Step1Props> = ({
                 className="flex items-center gap-2"
               >
                 <Gauge className="w-4 h-4" />
-                Odometer at Start (km)
+                Odometer at Start (km) *
               </Label>
               <Input
                 id="odometer_start"
@@ -160,7 +160,7 @@ const Step1: React.FC<Step1Props> = ({
                 className="flex items-center gap-2"
               >
                 <Battery className="w-4 h-4" />
-                Battery/Charge at Start (%)
+                Battery/Charge at Start (%) *
                 <span className="ml-2 font-mono text-sm text-muted-foreground">{formData.battery_start ?? 0}%</span>
               </Label>
               <Slider

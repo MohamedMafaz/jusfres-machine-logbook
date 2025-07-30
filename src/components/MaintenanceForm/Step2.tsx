@@ -70,7 +70,7 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
             
             {/* End Location */}
             <div className="space-y-2">
-              <Label htmlFor="end_location">End Location</Label>
+              <Label htmlFor="end_location">End Location *</Label>
               <select
                 id="end_location"
                 value={formData.end_location || ''}
@@ -100,7 +100,7 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
             <div className="space-y-2">
               <Label htmlFor="end_time" className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                End Time
+                End Time *
               </Label>
               <Input
                 id="end_time"
@@ -115,7 +115,7 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
             <div className="space-y-2">
               <Label htmlFor="odometer_end" className="flex items-center gap-2">
                 <Gauge className="w-4 h-4" />
-                Odometer at End (km)
+                Odometer at End (km) *
               </Label>
               <Input
                 id="odometer_end"
@@ -131,7 +131,7 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
             <div className="space-y-2">
               <Label htmlFor="battery_end" className="flex items-center gap-2">
                 <Battery className="w-4 h-4" />
-                Battery/Charge at End (%)
+                Battery/Charge at End (%) *
                 <span className="ml-2 font-mono text-sm text-muted-foreground">{formData.battery_end ?? 0}%</span>
               </Label>
               <Slider

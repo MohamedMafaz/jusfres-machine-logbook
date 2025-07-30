@@ -76,7 +76,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="space-y-2">
-              <Label htmlFor="cup_availability">Cup Availability (Reels)</Label>
+              <Label htmlFor="cup_availability">Cup Availability (Reels) *</Label>
               <div className="flex items-center space-x-3">
                 <Input
                   id="cup_availability"
@@ -88,6 +88,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
                   min={0}
                   max={3}
                   step={0.25}
+                  required
                 />
                 <span className="text-sm text-gray-700">
                   {formData.cup_availability || 0}
@@ -97,7 +98,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
 
             {/* Number of Oranges Placed */}
             <div className="space-y-2">
-              <Label htmlFor="oranges_placed">Number of Oranges Placed</Label>
+              <Label htmlFor="oranges_placed">Number of Oranges Placed *</Label>
               <Input
                 id="oranges_placed"
                 type="number"
@@ -111,7 +112,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
 
 
             <div className="space-y-2">
-              <Label htmlFor="lid_availability">Lid Availability (Reels)</Label>
+              <Label htmlFor="lid_availability">Lid Availability (Reels) *</Label>
               <div className="flex items-center space-x-3">
                 <Input
                   id="lid_availability"
@@ -123,6 +124,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
                   min={0}
                   max={3}
                   step={0.25}
+                  required
                 />
                 <span className="text-sm text-gray-700">
                   {formData.lid_availability || 0}
@@ -133,7 +135,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
             <div className="space-y-2">
               <Label htmlFor="temperature" className="flex items-center gap-2">
                 <Thermometer className="w-4 h-4" />
-                Temperature
+                Temperature *
               </Label>
               <Input
                 id="temperature"
@@ -142,6 +144,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
                 value={formData.temperature || ''}
                 onChange={(e) => onUpdate({ temperature: parseFloat(e.target.value) || 0 })}
                 placeholder="0.00"
+                required
               />
             </div>
 
@@ -159,7 +162,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
           <CardContent className="space-y-4">
 
             <div className="space-y-2">
-              <Label htmlFor="tasks_completed">Tasks Completed</Label>
+              <Label htmlFor="tasks_completed">Tasks Completed *</Label>
               <div className="grid gap-2">
                 {[
                   { label: 'Oranges Filled', value: 'oranges_filled' },
@@ -195,7 +198,7 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
 
 
             <div className="space-y-2">
-              <Label htmlFor="issues_errors">Issues/Errors Reported</Label>
+              <Label htmlFor="issues_errors">Issues/Errors Reported *</Label>
               <div className="grid gap-2">
                 {[
                   'Cup error reported',
@@ -257,10 +260,11 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
             {/* Water Status Dropdowns */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Status of Machine - Water for Cleaning</Label>
+                <Label>Status of Machine - Water for Cleaning *</Label>
                 <Select
                   value={formData.water_cleaning_status || ''}
                   onValueChange={(value) => onUpdate({ water_cleaning_status: value })}
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -278,12 +282,13 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
 
 
               <div className="space-y-2">
-                <Label>Status of Machine - Refrigerant Water</Label>
+                <Label>Status of Machine - Refrigerant Water *</Label>
                 <Select
                   value={formData.refrigerant_water_status || ''}
                   onValueChange={(value: string) =>
                     onUpdate({ refrigerant_water_status: value })
                   }
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -301,12 +306,13 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 {/* Cleaning Water Select */}
                 <div className="space-y-2">
-                  <Label>Status of Machine - Cleaning Water</Label>
+                  <Label>Status of Machine - Cleaning Water *</Label>
                   <Select
                     value={formData.filled_cleaning_water || ''}
                     onValueChange={(value: string) =>
                       onUpdate({ filled_cleaning_water: value })
                     }
+                    required
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
@@ -323,12 +329,13 @@ const Step3: React.FC<Step3Props> = ({ formData, onUpdate, onSubmit, isLoading }
 
                 {/* Refrigerant Water Select */}
                 <div className="space-y-2">
-                  <Label>Status of Machine - Refrigerant Water</Label>
+                  <Label>Status of Machine - Refrigerant Water *</Label>
                   <Select
                     value={typeof formData.filled_refrigerant_water === 'string' ? formData.filled_refrigerant_water : ''}
                     onValueChange={(value: string) =>
                       onUpdate({ filled_refrigerant_water: value })
                     }
+                    required
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />

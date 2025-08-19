@@ -20,6 +20,7 @@ const USERS = [
   { username: 'Ashok', password: 'jusfres2', displayName: 'Ashok' },
   { username: 'Fahamidha', password: 'jusfres3', displayName: 'Fahamidha' },
   { username: 'Mafaz', password: 'jusfres4', displayName: 'Mafaz' },
+  { username: 'Kishan', password: 'Kishan@Jusfres', displayName: 'Kishan' },
 ];
 
 interface AuthProviderProps {

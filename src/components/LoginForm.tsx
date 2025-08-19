@@ -48,7 +48,7 @@ const LoginForm: React.FC = () => {
             </div>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">JusFres Maintenance</h1>
+            <h1 className="text-3xl font-bold text-foreground">JusFres Maintenance Tracker</h1>
             <p className="text-muted-foreground mt-2">Machine Logbook System</p>
           </div>
         </div>

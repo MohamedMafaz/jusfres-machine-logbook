@@ -6,15 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { MaintenanceEntry } from '@/types/maintenance';
-import { 
-  ArrowLeft, 
-  Search, 
-  Calendar, 
-  MapPin, 
-  User, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Search,
+  Calendar,
+  MapPin,
+  User,
+  CheckCircle,
   Clock,
   AlertCircle,
   X,
@@ -24,14 +25,31 @@ import {
   Droplets,
   Wrench,
   AlertTriangle,
-  Download
+  Download,
+  Route,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EntriesPageProps {
   onBack: () => void;
+}
+
+interface Trip {
+  id: string;
+  user: string;
+  date: string;
+  entries: MaintenanceEntry[];
+  totalDuration: number;
+  totalDistance: number;
+  totalBatteryConsumed: number;
+  startTime: string;
+  endTime: string;
+  status: 'Complete' | 'In Progress';
 }
 
 const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
@@ -42,11 +60,12 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEntry, setSelectedEntry] = useState<MaintenanceEntry | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [expandedTrip, setExpandedTrip] = useState<string | null>(null);
 
   useEffect(() => {
     loadEntries();
-    
+
     // Set up real-time subscription
     const channel = supabase
       .channel('maintenance_entries_changes')
@@ -71,7 +90,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
 
   useEffect(() => {
     // Filter entries based on search term
-    const filtered = entries.filter(entry => 
+    const filtered = entries.filter(entry =>
       entry.filled_by?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.start_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.end_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,6 +98,23 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       entry.issues_errors?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredEntries(filtered);
+
+    // Process trips from filtered entries (or all entries if search is empty? Better to process all then filter trips)
+    // For now, let's process ALL entries into trips, then filter trips if needed.
+    // But user might want to search within trips.
+    // Let's process ALL entries to build trips correctly (since a trip might span across search terms).
+    const processedTrips = groupEntriesIntoTrips(entries);
+
+    // Filter trips based on search term (if user matches, or any entry in trip matches)
+    const filteredTrips = processedTrips.filter(trip =>
+      trip.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trip.entries.some(e =>
+        e.start_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.end_location?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+    setTrips(filteredTrips);
+
   }, [entries, searchTerm]);
 
   const loadEntries = async () => {
@@ -86,7 +122,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       const { data, error } = await supabase
         .from('maintenance_entries')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }); // Newest first
 
       if (error) throw error;
       setEntries(data || []);
@@ -95,6 +131,81 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const groupEntriesIntoTrips = (allEntries: MaintenanceEntry[]): Trip[] => {
+    // Sort by date ascending to build trips chronologically
+    const sorted = [...allEntries].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    const trips: Trip[] = [];
+    let currentTripEntries: MaintenanceEntry[] = [];
+
+    sorted.forEach(entry => {
+      // Start of a new trip logic:
+      // If start_location is "Ashok sir's House", it's definitely a start.
+      // Or if we don't have a current trip, we start one (handling incomplete data).
+
+      if (entry.start_location === "Ashok sir's House") {
+        // If we were already building a trip, close it (it was incomplete or previous logic failed)
+        if (currentTripEntries.length > 0) {
+          trips.push(createTripObject(currentTripEntries));
+        }
+        currentTripEntries = [entry];
+      } else {
+        // Continue existing trip
+        if (currentTripEntries.length === 0) {
+          // Orphaned entry (didn't start at Ashok's house), treat as its own trip or start of one
+          currentTripEntries = [entry];
+        } else {
+          currentTripEntries.push(entry);
+        }
+      }
+
+      // End of a trip logic:
+      // If end_location is "Ashok sir's House", the trip ends here.
+      if (entry.end_location === "Ashok sir's House") {
+        trips.push(createTripObject(currentTripEntries));
+        currentTripEntries = [];
+      }
+    });
+
+    // Add any remaining incomplete trip
+    if (currentTripEntries.length > 0) {
+      trips.push(createTripObject(currentTripEntries));
+    }
+
+    // Return reversed (newest trips first)
+    return trips.reverse();
+  };
+
+  const createTripObject = (tripEntries: MaintenanceEntry[]): Trip => {
+    const first = tripEntries[0];
+    const last = tripEntries[tripEntries.length - 1];
+
+    const totalDuration = tripEntries.reduce((sum, e) => sum + (e.duration_minutes || 0), 0);
+    const totalDistance = tripEntries.reduce((sum, e) => sum + (e.distance || 0), 0);
+
+    // Battery consumed: Sum of (Start - End) for each leg
+    const totalBatteryConsumed = tripEntries.reduce((sum, e) => {
+      const start = e.battery_start || 0;
+      const end = e.battery_end || 0;
+      return sum + (start - end);
+    }, 0);
+
+    const isComplete = last.end_location === "Ashok sir's House";
+
+    return {
+      id: first.id, // Use first entry ID as trip ID
+      user: first.filled_by,
+      date: first.date_of_entry,
+      entries: tripEntries,
+      totalDuration,
+      totalDistance: Math.round(totalDistance * 100) / 100,
+      totalBatteryConsumed,
+      startTime: first.start_time || '',
+      endTime: last.end_time || '',
+      status: isComplete ? 'Complete' : 'In Progress'
+    };
   };
 
   const getStatusBadge = (entry: MaintenanceEntry) => {
@@ -154,12 +265,12 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
 
     // Convert entries to CSV rows
     const csvRows = [headers.join(',')];
-    
+
     filteredEntries.forEach(entry => {
-      const status = entry.step3_completed ? 'Complete' : 
-                    entry.step2_completed ? 'Step 3 Pending' : 
-                    entry.step1_completed ? 'Step 2 Pending' : 'Step 1 Pending';
-      
+      const status = entry.step3_completed ? 'Complete' :
+        entry.step2_completed ? 'Step 3 Pending' :
+          entry.step1_completed ? 'Step 2 Pending' : 'Step 1 Pending';
+
       const row = [
         `"${entry.filled_by || ''}"`,
         `"${entry.date_of_entry || ''}"`,
@@ -186,23 +297,23 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
         entry.filled_cleaning_water ? 'Yes' : 'No',
         entry.filled_refrigerant_water ? 'Yes' : 'No',
         `"${Array.isArray(entry.items_carried)
-            ? entry.items_carried.join(', ')
-            : (typeof entry.items_carried === 'string' && entry.items_carried.includes(',')
-                ? entry.items_carried.split(',').map(i => i.trim()).filter(Boolean).join(', ')
-                : (entry.items_carried || ''))}"`,
+          ? entry.items_carried.join(', ')
+          : (typeof entry.items_carried === 'string' && entry.items_carried.includes(',')
+            ? entry.items_carried.split(',').map(i => i.trim()).filter(Boolean).join(', ')
+            : (entry.items_carried || ''))}"`,
         `"${entry.tasks_completed || ''}"`,
         `"${entry.issues_errors || ''}"`,
         `"${status}"`,
         `"${entry.created_at || ''}"`
       ];
-      
+
       csvRows.push(row.join(','));
     });
 
     const csvContent = csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    
+
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
@@ -225,8 +336,8 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
   };
 
   const renderMobileCard = (entry: MaintenanceEntry) => (
-    <Card 
-      key={entry.id} 
+    <Card
+      key={entry.id}
       className="cursor-pointer hover:shadow-md transition-shadow"
       onClick={() => handleEntryClick(entry)}
     >
@@ -275,35 +386,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
                 <span>{entry.distance}km</span>
               </div>
             )}
-            {entry.duration_minutes && (
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                <span>{entry.duration_minutes}min</span>
-              </div>
-            )}
-            {entry.time_spent_machine && (
-              <div className="flex items-center gap-1">
-                <Wrench className="w-3 h-3" />
-                <span>{entry.time_spent_machine}min</span>
-              </div>
-            )}
           </div>
-
-          {/* Tasks Preview */}
-          {entry.tasks_completed && (
-            <div className="text-sm">
-              <span className="font-medium">Tasks:</span>
-              <p className="text-muted-foreground truncate">{entry.tasks_completed}</p>
-            </div>
-          )}
-
-          {/* Issues Preview */}
-          {entry.issues_errors && (
-            <div className="text-sm">
-              <span className="font-medium text-orange-600">Issues:</span>
-              <p className="text-muted-foreground truncate">{entry.issues_errors}</p>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -321,7 +404,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
         {selectedEntry && (
           <div className="space-y-6">
             {/* Basic Info */}
-            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}> 
+            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-muted-foreground" />
@@ -361,7 +444,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
             </div>
             <Separator />
             {/* Times */}
-            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}> 
+            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}>
               <div className="space-y-2">
                 <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Clock className="w-4 h-4" /> Time Information </h3>
                 <div className="space-y-1 text-sm">
@@ -390,7 +473,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
             {/* Inventory */}
             <div className="space-y-2">
               <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Package className="w-4 h-4" /> Inventory & Supplies </h3>
-              <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 md:grid-cols-4'}`}> 
+              <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 md:grid-cols-4'}`}>
                 <div>Boxes (88): {selectedEntry.orange_88_count ?? selectedEntry.boxes_88 ?? '-'}</div>
                 <div>Boxes (113): {selectedEntry.orange_113_count ?? selectedEntry.boxes_113 ?? '-'}</div>
                 <div>Custom Boxes: {selectedEntry.orange_custom_box_count ?? selectedEntry.boxes_custom ?? '-'}</div>
@@ -401,7 +484,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
             </div>
             <Separator />
             {/* Water Status */}
-            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}> 
+            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}>
               <div className="space-y-2">
                 <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Droplets className="w-4 h-4" /> Water Management </h3>
                 <div className="space-y-1 text-sm">
@@ -416,11 +499,11 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
                 <div className="text-sm"> {
                   selectedEntry.items_carried
                     ? (Array.isArray(selectedEntry.items_carried)
-                        ? selectedEntry.items_carried.join(', ')
-                        : (typeof selectedEntry.items_carried === 'string' && selectedEntry.items_carried.includes(',')
-                            ? selectedEntry.items_carried.split(',').map(i => i.trim()).filter(Boolean).join(', ')
-                            : selectedEntry.items_carried))
-                    : '-' 
+                      ? selectedEntry.items_carried.join(', ')
+                      : (typeof selectedEntry.items_carried === 'string' && selectedEntry.items_carried.includes(',')
+                        ? selectedEntry.items_carried.split(',').map(i => i.trim()).filter(Boolean).join(', ')
+                        : selectedEntry.items_carried))
+                    : '-'
                 } </div>
               </div>
             </div>
@@ -451,7 +534,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 space-y-6">
-        
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
           <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -485,108 +568,240 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
           </CardContent>
         </Card>
 
-        {/* Entries */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              All Entries ({filteredEntries.length})
-            </CardTitle>
-            <CardDescription>
-              Complete maintenance history and current progress
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Loading entries...</p>
-              </div>
-            ) : filteredEntries.length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {searchTerm ? 'No entries match your search criteria.' : 'No maintenance entries found.'}
-                </AlertDescription>
-              </Alert>
-            ) : isMobile ? (
-              // Mobile Cards View
-              <div className="space-y-4">
-                {filteredEntries.map(renderMobileCard)}
-              </div>
-            ) : (
-              // Desktop Table View
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Start Location</TableHead>
-                      <TableHead>End Location</TableHead>
-                      <TableHead>Tasks</TableHead>
-                      <TableHead>Issues</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEntries.map((entry) => (
-                      <TableRow 
-                        key={entry.id} 
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleEntryClick(entry)}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{entry.filled_by}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(entry.date_of_entry || '').toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-muted-foreground" />
-                            <span>{entry.start_location || '-'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-muted-foreground" />
-                            <span>{entry.end_location || '-'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs">
-                            <p className="text-sm text-muted-foreground truncate">
-                              {entry.tasks_completed || '-'}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs">
-                            <p className="text-sm text-muted-foreground truncate">
-                              {entry.issues_errors || '-'}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(entry)}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(entry.created_at || '').toLocaleDateString()}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="entries" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="entries">All Entries</TabsTrigger>
+            <TabsTrigger value="trips">Maintenance Trips</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="entries">
+            {/* Entries List */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  All Entries ({filteredEntries.length})
+                </CardTitle>
+                <CardDescription>
+                  Complete maintenance history and current progress
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading entries...</p>
+                  </div>
+                ) : filteredEntries.length === 0 ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {searchTerm ? 'No entries match your search criteria.' : 'No maintenance entries found.'}
+                    </AlertDescription>
+                  </Alert>
+                ) : isMobile ? (
+                  // Mobile Cards View
+                  <div className="space-y-4">
+                    {filteredEntries.map(renderMobileCard)}
+                  </div>
+                ) : (
+                  // Desktop Table View
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>User</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Start Location</TableHead>
+                          <TableHead>End Location</TableHead>
+                          <TableHead>Tasks</TableHead>
+                          <TableHead>Issues</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Created</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEntries.map((entry) => (
+                          <TableRow
+                            key={entry.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => handleEntryClick(entry)}
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-medium">{entry.filled_by}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(entry.date_of_entry || '').toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <span>{entry.start_location || '-'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <span>{entry.end_location || '-'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-xs">
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {entry.tasks_completed || '-'}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-xs">
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {entry.issues_errors || '-'}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(entry)}
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(entry.created_at || '').toLocaleDateString()}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="trips">
+            {/* Trips List */}
+            <div className="space-y-4">
+              {trips.length === 0 ? (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>No trips found.</AlertDescription>
+                </Alert>
+              ) : (
+                trips.map(trip => (
+                  <Card key={trip.id} className="overflow-hidden">
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setExpandedTrip(expandedTrip === trip.id ? null : trip.id)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="bg-primary/10 p-2 rounded-full">
+                          <Route className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold flex items-center gap-2">
+                            {trip.user}
+                            <Badge variant={trip.status === 'Complete' ? 'default' : 'secondary'}>
+                              {trip.status}
+                            </Badge>
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(trip.date).toLocaleDateString()} • {trip.entries.length} Stops
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="hidden md:block text-right">
+                          <div className="text-sm font-medium">{trip.totalDistance} km</div>
+                          <div className="text-xs text-muted-foreground">Total Distance</div>
+                        </div>
+                        <div className="hidden md:block text-right">
+                          <div className="text-sm font-medium">{trip.totalDuration} min</div>
+                          <div className="text-xs text-muted-foreground">Total Duration</div>
+                        </div>
+                        <div className="hidden md:block text-right">
+                          <div className="text-sm font-medium">{trip.totalBatteryConsumed}%</div>
+                          <div className="text-xs text-muted-foreground">Battery Consumed</div>
+                        </div>
+                        {expandedTrip === trip.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </div>
+                    </div>
+
+                    {expandedTrip === trip.id && (
+                      <div className="border-t bg-muted/10 p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                          <Card className="bg-background">
+                            <CardContent className="p-4 flex items-center gap-3">
+                              <Clock className="w-8 h-8 text-blue-500" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Duration</p>
+                                <p className="text-xl font-bold">{trip.totalDuration} min</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-background">
+                            <CardContent className="p-4 flex items-center gap-3">
+                              <MapPin className="w-8 h-8 text-green-500" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Distance</p>
+                                <p className="text-xl font-bold">{trip.totalDistance} km</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-background">
+                            <CardContent className="p-4 flex items-center gap-3">
+                              <Battery className="w-8 h-8 text-orange-500" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Battery Consumed</p>
+                                <p className="text-xl font-bold">{trip.totalBatteryConsumed}%</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        <h4 className="font-semibold mb-4 flex items-center gap-2">
+                          <Route className="w-4 h-4" /> Trip Timeline
+                        </h4>
+
+                        <div className="relative border-l-2 border-muted ml-4 space-y-8 pb-4">
+                          {trip.entries.map((entry, idx) => (
+                            <div key={entry.id} className="relative pl-6">
+                              <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-background border-2 border-primary" />
+                              <div
+                                className="bg-background border rounded-lg p-3 cursor-pointer hover:shadow-md transition-all"
+                                onClick={() => handleEntryClick(entry)}
+                              >
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <span className="font-semibold">{entry.start_location}</span>
+                                    <span className="text-muted-foreground mx-2">→</span>
+                                    <span className="font-semibold">{entry.end_location}</span>
+                                  </div>
+                                  <Badge variant="outline">{entry.start_time} - {entry.end_time}</Badge>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
+                                  <div>Dist: {entry.distance}km</div>
+                                  <div>Dur: {entry.duration_minutes}min</div>
+                                  <div>Batt: {entry.battery_start}% → {entry.battery_end}%</div>
+                                  <div>Temp: {entry.temperature}°C</div>
+                                </div>
+                                {entry.issues_errors && (
+                                  <div className="mt-2 text-sm text-red-500 bg-red-50 dark:bg-red-900/10 p-2 rounded">
+                                    Issue: {entry.issues_errors}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Details Modal */}
         {renderDetailsModal()}

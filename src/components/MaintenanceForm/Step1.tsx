@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ClipboardList, MapPin, Clock, Gauge, Battery } from "lucide-react";
 import { MaintenanceEntry } from "@/types/maintenance";
 import { Slider } from "@/components/ui/slider";
+import { LOCATIONS } from "@/constants/locations";
 
 interface Step1Props {
   formData: Partial<MaintenanceEntry>;
@@ -71,49 +72,22 @@ const Step1: React.FC<Step1Props> = ({
                 readOnly
                 className="bg-muted"
               />
-            </div>
-
-            {/* Date of Entry */}
-            <div className="space-y-2">
-              <Label htmlFor="date_of_entry">Date of Entry *</Label>
-              <Input
-                id="date_of_entry"
-                type="date"
-                value={formData.date_of_entry || ""}
-                onChange={(e) => onUpdate({ date_of_entry: e.target.value })}
-                required
-              />
-            </div>
-
-            {/* Start Location */}
-            <div className="space-y-2">
-              <Label htmlFor="start_location">Start Location *</Label>
               <select
                 id="start_location"
                 value={formData.start_location || ""}
                 onChange={(e) => onUpdate({ start_location: e.target.value })}
                 required
-                className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                disabled={true}
+                className="w-full border rounded px-3 py-2 bg-muted text-foreground cursor-not-allowed"
               >
                 <option value="" disabled>
                   Select starting location
                 </option>
-                <option value="Husky">Husky</option>
-                <option value="Sabzi Mandi">Sabzi Mandi</option>
-                <option value="Translink China">Translink China</option>
-                <option value="Metro China">Metro China</option>
-                <option value="Capstan Station">Capstan Station</option>
-                <option value="Edmonds China">Edmonds China</option>
-                <option value="Surrey China">Surrey China</option>
-                <option value="Canadian Tire">Canadian Tire</option>
-                <option value="Rupert Station">Rupert Station</option>
-                <option value="Lougheed Station">Lougheed Station</option>
-                <option value="UBC">UBC</option>
-                <option value="Warehouse">Warehouse</option>
-                <option value="Ashok sir's House">Ashok sir's House</option>
-                <option value="Bradner's (Cold Storage)">
-                  Bradner's (Cold Storage)
-                </option>
+                {LOCATIONS.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -180,18 +154,23 @@ const Step1: React.FC<Step1Props> = ({
               <div className="space-y-1">
                 {[
                   "Boxes of Oranges",
+                  "Boxes of Apples",
                   "Black Bins & Cleaning Materials",
                   "Empty Bins",
                   "Clean Water",
                   "Cups and Lids",
                   "Machine Parts",
+                  "Glass Cleaner",
+                  "Sanitizer",
+                  "Paper towel",
+                  "Cleaning Cloth"
                 ].map((item) => {
                   // Ensure items_carried is always treated as an array for checkboxes
                   const carriedArray = Array.isArray(formData.items_carried)
                     ? formData.items_carried
                     : formData.items_carried
-                    ? formData.items_carried.split(",").map((i) => i.trim())
-                    : [];
+                      ? formData.items_carried.split(",").map((i) => i.trim())
+                      : [];
                   return (
                     <label key={item} className="flex items-center space-x-2">
                       <input
@@ -276,7 +255,7 @@ const Step1: React.FC<Step1Props> = ({
               {formData.orange_custom_box_count > 0 && (
                 <div className="space-y-1">
                   <Label htmlFor="orange_custom_count_per_box">
-                    Count per Custom Box
+                    Oranges per Custom Box
                   </Label>
                   <Input
                     id="orange_custom_count_per_box"
@@ -292,6 +271,79 @@ const Step1: React.FC<Step1Props> = ({
                   />
                 </div>
               )}
+
+              {/* Apple Boxes Section */}
+              <div className="space-y-4 pt-4 border-t">
+                <Label className="text-lg font-semibold">Boxes of Apples</Label>
+
+                {/* 88 Count Boxes */}
+                <div className="space-y-1">
+                  <Label htmlFor="apple_88_count">88 Count Boxes</Label>
+                  <Input
+                    id="apple_88_count"
+                    type="number"
+                    placeholder="Enter number of 88-count boxes"
+                    value={formData.apple_88_count ?? ""}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      onUpdate({ apple_88_count: isNaN(value) ? 0 : value });
+                    }}
+                  />
+                </div>
+
+                {/* 113 Count Boxes */}
+                <div className="space-y-1">
+                  <Label htmlFor="apple_113_count">113 Count Boxes</Label>
+                  <Input
+                    id="apple_113_count"
+                    type="number"
+                    placeholder="Enter number of 113-count boxes"
+                    value={formData.apple_113_count ?? ""}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      onUpdate({ apple_113_count: isNaN(value) ? 0 : value });
+                    }}
+                  />
+                </div>
+
+                {/* Custom Boxes */}
+                <div className="space-y-1">
+                  <Label htmlFor="apple_custom_box_count">Custom Boxes</Label>
+                  <Input
+                    id="apple_custom_box_count"
+                    type="number"
+                    placeholder="Enter number of custom boxes"
+                    value={formData.apple_custom_box_count ?? ""}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      onUpdate({
+                        apple_custom_box_count: isNaN(value) ? 0 : value,
+                      });
+                    }}
+                  />
+                </div>
+
+                {/* Count per Custom Box */}
+                {(formData.apple_custom_box_count || 0) > 0 && (
+                  <div className="space-y-1">
+                    <Label htmlFor="apple_custom_count_per_box">
+                      Apples per Custom Box
+                    </Label>
+                    <Input
+                      id="apple_custom_count_per_box"
+                      type="number"
+                      placeholder="Enter count per custom box"
+                      value={formData.apple_custom_count_per_box ?? ""}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        onUpdate({
+                          apple_custom_count_per_box: isNaN(value) ? 0 : value,
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Submit Button */}

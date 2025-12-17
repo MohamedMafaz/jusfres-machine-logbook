@@ -1,0 +1,7 @@
+-- Add columns for Apple support
+ALTER TABLE maintenance_entries 
+ADD COLUMN IF NOT EXISTS apple_88_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS apple_113_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS apple_custom_box_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS apple_custom_count_per_box INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS apples_placed INTEGER DEFAULT 0;

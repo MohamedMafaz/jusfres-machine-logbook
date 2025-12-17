@@ -4,24 +4,24 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MaintenanceEntry } from '@/types/maintenance';
-import { 
-  Plus, 
-  ClipboardList, 
-  LogOut, 
-  User, 
-  CheckCircle, 
-  Clock, 
+import {
+  Plus,
+  ClipboardList,
+  LogOut,
+  User,
+  CheckCircle,
+  Clock,
   AlertCircle,
   Calendar,
-  BarChart3
+  BarChart3,
+  PlayCircle
 } from 'lucide-react';
 import Step1 from './MaintenanceForm/Step1';
 import Step2 from './MaintenanceForm/Step2';
-import Step3 from './MaintenanceForm/Step3';
 import EntriesPage from './EntriesPage';
 import CompletionScreen from './CompletionScreen';
 import NotificationToast from './NotificationToast';
@@ -63,8 +63,8 @@ const Dashboard: React.FC = () => {
       setRecentEntries(
         (data || []).map(entry => ({
           ...entry,
-          filled_cleaning_water: entry.filled_cleaning_water === true || entry.filled_cleaning_water === 'true',
-          filled_refrigerant_water: entry.filled_refrigerant_water === true || entry.filled_refrigerant_water === 'true',
+          filled_cleaning_water: entry.filled_cleaning_water === true || (entry.filled_cleaning_water as any) === 'true',
+          filled_refrigerant_water: entry.filled_refrigerant_water === true || (entry.filled_refrigerant_water as any) === 'true',
         }))
       );
     } catch (error) {
@@ -72,14 +72,63 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const startNewEntry = () => {
-    setFormData({
-      filled_by: user?.displayName || '',
-      date_of_entry: new Date().toISOString().split('T')[0],
-      current_step: 1,
-    });
-    setCurrentEntry(null);
-    setCurrentView('form');
+  const startNewEntry = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch the most recent entry for the current user
+      const { data: lastEntry } = await supabase
+        .from('maintenance_entries')
+        .select('*')
+        .eq('filled_by', user?.displayName)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const newFormData: Partial<MaintenanceEntry> = {
+        filled_by: user?.displayName || '',
+        date_of_entry: new Date().toISOString().split('T')[0],
+        start_time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+        start_location: "Ashok sir's House",
+        current_step: 1,
+      };
+
+      if (lastEntry) {
+        // Carry over values from the previous entry
+        if (lastEntry.end_location) {
+          newFormData.start_location = lastEntry.end_location;
+        }
+        newFormData.items_carried = lastEntry.items_carried ?? undefined;
+        newFormData.orange_88_count = lastEntry.boxes_88 ?? undefined;
+        newFormData.orange_113_count = lastEntry.boxes_113 ?? undefined;
+        newFormData.orange_custom_box_count = lastEntry.boxes_custom ?? undefined;
+        // newFormData.orange_custom_count_per_box = lastEntry.orange_custom_count_per_box;
+
+        // Auto-fill Step 1 specific fields from previous entry's end values
+        newFormData.odometer_start = lastEntry.odometer_end ?? undefined;
+        newFormData.battery_start = lastEntry.battery_end ?? undefined;
+      }
+
+      setFormData(newFormData);
+      setCurrentEntry(null);
+      setCurrentView('form');
+    } catch (error) {
+      console.error('Error starting new entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load previous entry data. Starting with a blank form.",
+        variant: "destructive",
+      });
+      // Fallback to empty form
+      setFormData({
+        filled_by: user?.displayName || '',
+        date_of_entry: new Date().toISOString().split('T')[0],
+        current_step: 1,
+      });
+      setCurrentEntry(null);
+      setCurrentView('form');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateFormData = (updates: Partial<MaintenanceEntry>) => {
@@ -100,6 +149,25 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const calculateDuration = (start: string | undefined, end: string | undefined): number => {
+    if (!start || !end) return 0;
+
+    const [startHours, startMinutes] = start.split(':').map(Number);
+    const [endHours, endMinutes] = end.split(':').map(Number);
+
+    const startDate = new Date(0, 0, 0, startHours, startMinutes);
+    const endDate = new Date(0, 0, 0, endHours, endMinutes);
+
+    let diff = (endDate.getTime() - startDate.getTime()) / 1000 / 60; // minutes
+
+    // Handle overnight case (if end time is before start time, assume next day)
+    if (diff < 0) {
+      diff += 24 * 60;
+    }
+
+    return Math.round(diff);
+  };
+
   const submitStep = async (step: number) => {
     setIsLoading(true);
     try {
@@ -108,6 +176,22 @@ const Dashboard: React.FC = () => {
         [`step${step}_completed`]: true,
         [`step${step}_completed_at`]: new Date().toISOString(),
       };
+
+      // If step 2 is completed, we are done (since we merged step 2 and 3)
+      // So we must also mark step 3 as completed to satisfy the "Trip Completed" logic
+      if (step === 2) {
+        updates.step3_completed = true;
+        updates.step3_completed_at = new Date().toISOString();
+
+        // Calculate distance and duration
+        if (formData.odometer_start && formData.odometer_end) {
+          updates.distance = formData.odometer_end - formData.odometer_start;
+        }
+
+        if (formData.start_time && formData.end_time) {
+          updates.duration_minutes = calculateDuration(formData.start_time, formData.end_time);
+        }
+      }
 
       if (currentEntry) {
         // Update existing entry
@@ -121,8 +205,8 @@ const Dashboard: React.FC = () => {
         // Create new entry
         const { data, error } = await supabase
           .from('maintenance_entries')
-          .insert([{ 
-            ...formData, 
+          .insert([{
+            ...formData,
             ...updates,
             filled_by: formData.filled_by || user?.displayName || ''
           }])
@@ -139,7 +223,8 @@ const Dashboard: React.FC = () => {
       // Update local form data
       updateFormData(updates);
 
-      if (step === 3) {
+      // If step 2 is completed, we are done
+      if (step === 2) {
         setCurrentView('completion');
       }
 
@@ -162,11 +247,11 @@ const Dashboard: React.FC = () => {
 
   const renderCurrentStep = () => {
     const step = formData.current_step || 1;
-    
+
     switch (step) {
       case 1:
         return (
-          <Step1 
+          <Step1
             formData={formData}
             onUpdate={updateFormData}
             onSubmit={() => submitStep(1)}
@@ -175,19 +260,10 @@ const Dashboard: React.FC = () => {
         );
       case 2:
         return (
-          <Step2 
+          <Step2
             formData={formData}
             onUpdate={updateFormData}
             onSubmit={() => submitStep(2)}
-            isLoading={isLoading}
-          />
-        );
-      case 3:
-        return (
-          <Step3 
-            formData={formData}
-            onUpdate={updateFormData}
-            onSubmit={() => submitStep(3)}
             isLoading={isLoading}
           />
         );
@@ -202,8 +278,8 @@ const Dashboard: React.FC = () => {
         <div className="container mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setCurrentView('dashboard')}
             >
               ← Back to Dashboard
@@ -225,7 +301,7 @@ const Dashboard: React.FC = () => {
 
   if (currentView === 'completion') {
     return (
-      <CompletionScreen 
+      <CompletionScreen
         onNewEntry={startNewEntry}
         onViewEntries={() => setCurrentView('entries')}
         onDashboard={() => setCurrentView('dashboard')}
@@ -238,7 +314,7 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-background">
       <NotificationToast />
       <div className="container mx-auto p-4 space-y-6">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -263,15 +339,22 @@ const Dashboard: React.FC = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="cursor-pointer hover:shadow-maintenance transition-shadow" onClick={startNewEntry}>
+          <Card
+            className="cursor-pointer hover:shadow-maintenance transition-shadow"
+            onClick={startNewEntry}
+          >
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
                   <Plus className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">New Maintenance Entry</h3>
-                  <p className="text-muted-foreground">Start a new maintenance logbook entry</p>
+                  <h3 className="font-semibold text-lg">
+                    New Maintenance Entry
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Start a new maintenance logbook entry
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -345,8 +428,8 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge variant={
-                        entry.step3_completed ? "default" : 
-                        entry.step2_completed ? "secondary" : "outline"
+                        entry.step3_completed ? "default" :
+                          entry.step2_completed ? "secondary" : "outline"
                       }>
                         {entry.step3_completed ? (
                           <><CheckCircle className="w-3 h-3 mr-1" /> Complete</>

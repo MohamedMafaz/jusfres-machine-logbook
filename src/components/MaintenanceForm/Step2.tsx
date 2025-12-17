@@ -3,9 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, Clock, Gauge, Battery, CheckCircle } from 'lucide-react';
+import { MapPin, Clock, Gauge, Battery, CheckCircle, Coffee, Thermometer, Droplets, Wrench } from 'lucide-react';
 import { MaintenanceEntry } from '@/types/maintenance';
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { LOCATIONS } from '@/constants/locations';
 
 interface Step2Props {
   formData: Partial<MaintenanceEntry>;
@@ -20,9 +23,33 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
     onSubmit();
   };
 
+  React.useEffect(() => {
+    if (!formData.temperature && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(
+              `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
+            );
+            const data = await response.json();
+            if (data.current_weather) {
+              onUpdate({ temperature: data.current_weather.temperature });
+            }
+          } catch (error) {
+            console.error("Error fetching weather:", error);
+          }
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        }
+      );
+    }
+  }, []); // Run once on mount
+
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6">
-      
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex justify-center">
@@ -31,8 +58,8 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
           </div>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">End Details</h1>
-          <p className="text-muted-foreground">Step 2 of 3 • Completion information</p>
+          <h1 className="text-2xl font-bold text-foreground">End Details & Stats</h1>
+          <p className="text-muted-foreground">Step 2 of 2 • Completion & Machine Stats</p>
         </div>
       </div>
 
@@ -47,27 +74,22 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
           <div className="w-3 h-3 bg-primary rounded-full"></div>
           <span className="text-sm text-primary font-medium">Step 2 Current</span>
         </div>
-        <div className="w-8 h-px bg-border"></div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-muted rounded-full"></div>
-          <span className="text-sm text-muted-foreground">Step 3 Pending</span>
-        </div>
       </div>
 
-      {/* Form Card */}
-      <Card className="shadow-card-custom">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-maintenance-primary" />
-            End Information
-          </CardTitle>
-          <CardDescription>
-            Record details after completing the maintenance visit
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* End Information Card */}
+        <Card className="shadow-card-custom">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-maintenance-primary" />
+              End Information
+            </CardTitle>
+            <CardDescription>
+              Record details after completing the maintenance visit
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+
             {/* End Location */}
             <div className="space-y-2">
               <Label htmlFor="end_location">End Location *</Label>
@@ -79,20 +101,11 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
                 className="w-full border rounded px-3 py-2 bg-background text-foreground"
               >
                 <option value="" disabled>Select ending location</option>
-                <option value="Husky">Husky</option>
-                <option value="Sabzi Mandi">Sabzi Mandi</option>
-                <option value="Translink China">Translink China</option>
-                <option value="Metro China">Metro China</option>
-                <option value="Capstan Station">Capstan Station</option>
-                <option value="Edmonds China">Edmonds China</option>
-                <option value="Surrey China">Surrey China</option>
-                <option value="Canadian Tire">Canadian Tire</option>
-                <option value="Rupert Station">Rupert Station</option>
-                <option value="Lougheed Station">Lougheed Station</option>
-                <option value="UBC">UBC</option>
-                <option value="Warehouse">Warehouse</option>
-                <option value="Ashok sir's House">Ashok sir's House</option>
-                <option value="Bradner's (Cold Storage)">Bradner's (Cold Storage)</option>
+                {LOCATIONS.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -144,20 +157,317 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
                 className="w-full"
               />
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Submit Button */}
-            <Button 
-              type="submit" 
-              className="w-full bg-primary hover:bg-primary-hover"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving Step 2...' : 'Complete Step 2 & Continue'}
-            </Button>
+        {/* Machine Supplies */}
+        <Card className="shadow-card-custom">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Coffee className="w-5 h-5 text-maintenance-primary" />
+              Machine Supplies
+            </CardTitle>
+            <CardDescription>Record current supply levels</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-          </form>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label htmlFor="cup_availability">Cup Availability (Reels) *</Label>
+              <div className="flex items-center space-x-3">
+                <Input
+                  id="cup_availability"
+                  type="range"
+                  value={formData.cup_availability || 0}
+                  onChange={(e) =>
+                    onUpdate({ cup_availability: parseFloat(e.target.value) || 0 })
+                  }
+                  min={0}
+                  max={3}
+                  step={0.25}
+                  required
+                />
+                <span className="text-sm text-gray-700">
+                  {formData.cup_availability || 0}
+                </span>
+              </div>
+            </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="lid_availability">Lid Availability (Reels) *</Label>
+              <div className="flex items-center space-x-3">
+                <Input
+                  id="lid_availability"
+                  type="range"
+                  value={formData.lid_availability || 0}
+                  onChange={(e) =>
+                    onUpdate({ lid_availability: parseFloat(e.target.value) || 0 })
+                  }
+                  min={0}
+                  max={3}
+                  step={0.25}
+                  required
+                />
+                <span className="text-sm text-gray-700">
+                  {formData.lid_availability || 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Number of Oranges Placed */}
+            <div className="space-y-2">
+              <Label htmlFor="oranges_placed">Number of Oranges Placed *</Label>
+              <Input
+                id="oranges_placed"
+                type="number"
+                min={0}
+                value={formData.oranges_placed ?? ''}
+                onChange={e => onUpdate({ oranges_placed: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+                required
+              />
+            </div>
+
+            {/* Number of Apples Placed */}
+            <div className="space-y-2">
+              <Label htmlFor="apples_placed">Number of Apples Placed</Label>
+              <Input
+                id="apples_placed"
+                type="number"
+                min={0}
+                value={formData.apples_placed ?? ''}
+                onChange={e => onUpdate({ apples_placed: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="temperature" className="flex items-center gap-2">
+                <Thermometer className="w-4 h-4" />
+                Temperature *
+              </Label>
+              <Input
+                id="temperature"
+                type="number"
+                step="0.01"
+                value={formData.temperature || ''}
+                onChange={(e) => onUpdate({ temperature: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+                required
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+                onClick={() => {
+                  if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                      async (position) => {
+                        try {
+                          const { latitude, longitude } = position.coords;
+                          const response = await fetch(
+                            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
+                          );
+                          const data = await response.json();
+                          if (data.current_weather) {
+                            onUpdate({ temperature: data.current_weather.temperature });
+                          }
+                        } catch (error) {
+                          console.error("Error fetching weather:", error);
+                        }
+                      },
+                      (error) => {
+                        console.error("Error getting location:", error);
+                      }
+                    );
+                  }
+                }}
+              >
+                Auto-Detect Temperature
+              </Button>
+            </div>
+
+          </CardContent>
+        </Card>
+
+        {/* Tasks and Issues */}
+        <Card className="shadow-card-custom">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-maintenance-primary" />
+              Tasks & Issues
+            </CardTitle>
+            <CardDescription>Document work performed and any problems encountered</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+
+            <div className="space-y-2">
+              <Label htmlFor="tasks_completed">Tasks Completed *</Label>
+              <div className="grid gap-2">
+                {[
+                  { label: 'Oranges Filled', value: 'oranges_filled' },
+                  { label: 'Apples Filled', value: 'apples_filled' },
+                  { label: 'Removed Peels', value: 'removed_peels' },
+                  { label: 'Cleaned the machine', value: 'cleaned_machine' },
+                  { label: 'Kept cups and lids', value: 'kept_cups_lids' },
+                  { label: 'Parts changed', value: 'parts_changed' }
+
+                ].map((item) => (
+                  <label key={item.value} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      value={item.value}
+                      checked={(formData.tasks_completed || []).includes(item.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const currentTasks = Array.isArray(formData.tasks_completed)
+                          ? formData.tasks_completed
+                          : (formData.tasks_completed?.split(',') || []);
+                        const newTasks = currentTasks.includes(value)
+                          ? currentTasks.filter((v) => v !== value)
+                          : [...currentTasks, value];
+                        onUpdate({ tasks_completed: newTasks.join(', ') });
+                      }}
+                      className="accent-blue-600"
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="issues_errors">Issues/Errors Reported *</Label>
+              <div className="grid gap-2">
+                {[
+                  'Cup error reported',
+                  'Cover Slide fell',
+                  'Cup holder not tight',
+                  'Replenish Tray Error',
+                  'Payment system error',
+                  'Machine error during operation - and part inspection',
+                  'Cashless device error',
+                  'Nayax Error',
+                  'Nut fallen inside machine',
+                  'Suspected internal leak',
+                  'Machine error during operation',
+                  'Required cleaning and part inspection',
+                ].map((issue) => (
+                  <label key={issue} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      value={issue}
+                      checked={(formData.issues_errors || []).includes(issue)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const currentIssues = Array.isArray(formData.issues_errors)
+                          ? formData.issues_errors
+                          : (formData.issues_errors?.split(', ') || []);
+                        const newIssues = currentIssues.includes(value)
+                          ? currentIssues.filter((v) => v !== value)
+                          : [...currentIssues, value];
+                        onUpdate({ issues_errors: newIssues.join(', ') });
+                      }}
+                      className="accent-red-600"
+                    />
+                    <span>{issue}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Water Systems */}
+        <Card className="shadow-card-custom">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Droplets className="w-5 h-5 text-maintenance-primary" />
+              Water Systems
+            </CardTitle>
+            <CardDescription>Water system status and maintenance</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+
+            {/* Water Status Dropdowns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status of Machine - Water for Cleaning *</Label>
+                <Select
+                  value={formData.water_cleaning_status || ''}
+                  onValueChange={(value) => onUpdate({ water_cleaning_status: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0 - 20%">0 - 20%</SelectItem>
+                    <SelectItem value="20 - 40%">20 - 40%</SelectItem>
+                    <SelectItem value="40 - 60%">40 - 60 %</SelectItem>
+                    <SelectItem value="60 - 80%">60 - 80 %</SelectItem>
+                    <SelectItem value="80 - 100%">80 - 100 %</SelectItem>
+
+                  </SelectContent>
+                </Select>
+              </div>
+
+
+              <div className="space-y-2">
+                <Label>Status of Machine - Refrigerant Water *</Label>
+                <Select
+                  value={formData.refrigerant_water_status || ''}
+                  onValueChange={(value: string) =>
+                    onUpdate({ refrigerant_water_status: value })
+                  }
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0 - 20%">0 - 20%</SelectItem>
+                    <SelectItem value="20 - 40%">20 - 40%</SelectItem>
+                    <SelectItem value="40 - 60%">40 - 60%</SelectItem>
+                    <SelectItem value="60 - 80%">60 - 80%</SelectItem>
+                    <SelectItem value="80 - 100%">80 - 100%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div className="flex items-center justify-between space-x-2 border p-3 rounded-md">
+                <Label htmlFor="filled_cleaning_water">Filled Cleaning Water?</Label>
+                <Switch
+                  id="filled_cleaning_water"
+                  checked={formData.filled_cleaning_water || false}
+                  onCheckedChange={(checked) => onUpdate({ filled_cleaning_water: checked })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between space-x-2 border p-3 rounded-md">
+                <Label htmlFor="filled_refrigerant_water">Filled Refrigerant Water?</Label>
+                <Switch
+                  id="filled_refrigerant_water"
+                  checked={formData.filled_refrigerant_water || false}
+                  onCheckedChange={(checked) => onUpdate({ filled_refrigerant_water: checked })}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          className="w-full bg-primary hover:bg-primary-hover"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Completing Entry...' : 'Complete Maintenance Entry'}
+        </Button>
+
+      </form>
     </div>
   );
 };

@@ -18,7 +18,8 @@ export const LOCATIONS = [
     "New Westminster Sky Train Station",
     "Burnaby Refinery Area 2",
     // New Locations
-
+    "Kelowna",
+    "Edmonton",
 ] as const;
 
 export type Location = typeof LOCATIONS[number];

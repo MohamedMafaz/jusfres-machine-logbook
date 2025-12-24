@@ -16,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Static user database for internal use
 const USERS = [
+  { username: 'Nematullah', password: 'jusfres5', displayName: 'Nematullah' },
   { username: 'Mark', password: 'jusfres1', displayName: 'Mark' },
   { username: 'Ashok', password: 'jusfres2', displayName: 'Ashok' },
   { username: 'Fahamidha', password: 'jusfres3', displayName: 'Fahamidha' },

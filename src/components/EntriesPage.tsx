@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { MaintenanceEntry } from '@/types/maintenance';
+import { getHomeBaseForUser } from '@/constants/locations';
 import {
   ArrowLeft,
   Search,
@@ -141,11 +142,14 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
     let currentTripEntries: MaintenanceEntry[] = [];
 
     sorted.forEach(entry => {
+      // Get the user's home base for this entry
+      const userHomeBase = getHomeBaseForUser(entry.filled_by);
+
       // Start of a new trip logic:
-      // If start_location is "Ashok sir's House", it's definitely a start.
+      // If start_location matches user's home base, it's definitely a start.
       // Or if we don't have a current trip, we start one (handling incomplete data).
 
-      if (entry.start_location === "Ashok sir's House") {
+      if (entry.start_location === userHomeBase) {
         // If we were already building a trip, close it (it was incomplete or previous logic failed)
         if (currentTripEntries.length > 0) {
           trips.push(createTripObject(currentTripEntries));
@@ -154,7 +158,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       } else {
         // Continue existing trip
         if (currentTripEntries.length === 0) {
-          // Orphaned entry (didn't start at Ashok's house), treat as its own trip or start of one
+          // Orphaned entry (didn't start at home base), treat as its own trip or start of one
           currentTripEntries = [entry];
         } else {
           currentTripEntries.push(entry);
@@ -162,8 +166,8 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       }
 
       // End of a trip logic:
-      // If end_location is "Ashok sir's House", the trip ends here.
-      if (entry.end_location === "Ashok sir's House") {
+      // If end_location matches user's home base, the trip ends here.
+      if (entry.end_location === userHomeBase) {
         trips.push(createTripObject(currentTripEntries));
         currentTripEntries = [];
       }
@@ -192,7 +196,9 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       return sum + (start - end);
     }, 0);
 
-    const isComplete = last.end_location === "Ashok sir's House";
+    // Get the user's home base for trip completion check
+    const userHomeBase = getHomeBaseForUser(first.filled_by);
+    const isComplete = last.end_location === userHomeBase;
 
     return {
       id: first.id, // Use first entry ID as trip ID

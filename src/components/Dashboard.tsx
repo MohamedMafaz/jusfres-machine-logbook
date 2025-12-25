@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MaintenanceEntry } from '@/types/maintenance';
+import { getHomeBaseForUser } from '@/constants/locations';
 import {
   Plus,
   ClipboardList,
@@ -88,7 +89,7 @@ const Dashboard: React.FC = () => {
         filled_by: user?.displayName || '',
         date_of_entry: new Date().toISOString().split('T')[0],
         start_time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-        start_location: "Ashok sir's House",
+        start_location: getHomeBaseForUser(user?.displayName || ''),
         current_step: 1,
       };
 

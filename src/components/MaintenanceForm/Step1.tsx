@@ -13,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ClipboardList, MapPin, Clock, Gauge, Battery } from "lucide-react";
 import { MaintenanceEntry } from "@/types/maintenance";
 import { Slider } from "@/components/ui/slider";
-import { LOCATIONS } from "@/constants/locations";
+import { getLocationsForUser } from "@/constants/locations";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Step1Props {
   formData: Partial<MaintenanceEntry>;
@@ -28,6 +29,9 @@ const Step1: React.FC<Step1Props> = ({
   onSubmit,
   isLoading,
 }) => {
+  const { user } = useAuth();
+  const locations = getLocationsForUser(user?.displayName || "");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit();
@@ -83,7 +87,7 @@ const Step1: React.FC<Step1Props> = ({
                 <option value="" disabled>
                   Select starting location
                 </option>
-                {LOCATIONS.map((location) => (
+                {locations.map((location) => (
                   <option key={location} value={location}>
                     {location}
                   </option>

@@ -8,7 +8,8 @@ import { MaintenanceEntry } from '@/types/maintenance';
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LOCATIONS } from '@/constants/locations';
+import { getLocationsForUser } from '@/constants/locations';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Step2Props {
   formData: Partial<MaintenanceEntry>;
@@ -18,6 +19,9 @@ interface Step2Props {
 }
 
 const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }) => {
+  const { user } = useAuth();
+  const locations = getLocationsForUser(user?.displayName || "");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit();
@@ -101,7 +105,7 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
                 className="w-full border rounded px-3 py-2 bg-background text-foreground"
               >
                 <option value="" disabled>Select ending location</option>
-                {LOCATIONS.map((location) => (
+                {locations.map((location) => (
                   <option key={location} value={location}>
                     {location}
                   </option>

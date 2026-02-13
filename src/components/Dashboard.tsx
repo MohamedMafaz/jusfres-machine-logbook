@@ -132,6 +132,27 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleEdit = (entry: MaintenanceEntry) => {
+    setFormData({
+      ...entry,
+      filled_by: entry.filled_by,
+      current_step: 1, // Always start at step 1 when editing
+    });
+    // Add missing fields if they are null
+    if (!entry.items_carried) entry.items_carried = undefined;
+    
+    setCurrentEntry(entry.id || null);
+    setCurrentView('form');
+  };
+
+  const canEditEntry = (entry: MaintenanceEntry) => {
+    if (!entry.created_at) return false;
+    const created = new Date(entry.created_at).getTime();
+    const now = new Date().getTime();
+    const diffMinutes = (now - created) / 1000 / 60;
+    return diffMinutes <= 5;
+  };
+
   const updateFormData = (updates: Partial<MaintenanceEntry>) => {
     setFormData(prev => ({ ...prev, ...updates }));
   };
@@ -306,9 +327,11 @@ const Dashboard: React.FC = () => {
         onNewEntry={startNewEntry}
         onViewEntries={() => setCurrentView('entries')}
         onDashboard={() => setCurrentView('dashboard')}
+        onEdit={() => currentEntry && handleEdit(recentEntries.find(e => e.id === currentEntry) || { ...formData, id: currentEntry } as MaintenanceEntry)}
+        canEdit={currentEntry ? canEditEntry(recentEntries.find(e => e.id === currentEntry) || { ...formData, created_at: new Date().toISOString() } as MaintenanceEntry) : false}
       />
     );
-  }
+  };
 
   // Dashboard view
   return (
@@ -441,6 +464,18 @@ const Dashboard: React.FC = () => {
                       <span className="text-xs text-muted-foreground">
                         {new Date(entry.date_of_entry).toLocaleDateString()}
                       </span>
+                      {canEditEntry(entry) && (
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleEdit(entry);
+                           }}
+                         >
+                           Edit
+                         </Button>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -7,12 +7,16 @@ interface CompletionScreenProps {
   onNewEntry: () => void;
   onViewEntries: () => void;
   onDashboard: () => void;
+  onEdit?: () => void;
+  canEdit?: boolean;
 }
 
 const CompletionScreen: React.FC<CompletionScreenProps> = ({ 
   onNewEntry, 
   onViewEntries, 
-  onDashboard 
+  onDashboard,
+  onEdit,
+  canEdit
 }) => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -63,6 +67,22 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
               </div>
             </CardContent>
           </Card>
+
+          {canEdit && onEdit && (
+            <Card className="cursor-pointer hover:shadow-maintenance transition-shadow" onClick={onEdit}>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                    <ClipboardList className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                     <h3 className="font-semibold">Edit Entry</h3>
+                     <p className="text-sm text-muted-foreground">Modify the last submitted entry</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="cursor-pointer hover:shadow-maintenance transition-shadow" onClick={onDashboard}>
             <CardContent className="p-4">

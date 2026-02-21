@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getVancouverDate, formatVancouverDateTime, VANCOUVER_TZ } from '@/lib/utils';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A020F0', '#FF6384', '#36A2EB', '#FFCE56'];
 
@@ -93,7 +94,8 @@ const Analytics: React.FC = () => {
     const filterByRange = (entryDate: string) => {
       if (range === 'all') return true;
       const date = new Date(entryDate);
-      const now = new Date();
+      const vancouverTodayStr = getVancouverDate();
+      const now = new Date(vancouverTodayStr); 
       const diffTime = Math.abs(now.getTime() - date.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -132,10 +134,9 @@ const Analytics: React.FC = () => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     entries.forEach(entry => {
-      const entryDate = new Date(entry.date_of_entry);
-      if (entryDate >= thirtyDaysAgo) {
-        const dateStr = entryDate.toISOString().split('T')[0];
-        entriesOverTime[dateStr] = (entriesOverTime[dateStr] || 0) + 1;
+      const entryDate = entry.date_of_entry; // Use string directly to avoid TZ shifts
+      if (new Date(entryDate) >= thirtyDaysAgo) {
+        entriesOverTime[entryDate] = (entriesOverTime[entryDate] || 0) + 1;
       }
     });
 
@@ -222,7 +223,9 @@ const Analytics: React.FC = () => {
         const nextIssueDate = new Date(lastIssueDate.getTime() + (mtbfDays * 24 * 60 * 60 * 1000));
 
         // Add recommendation if next issue is soon (within 3 days)
-        const daysUntilIssue = (nextIssueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+        const vancouverTodayStr = getVancouverDate();
+        const now = new Date(vancouverTodayStr);
+        const daysUntilIssue = (nextIssueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
 
         if (daysUntilIssue <= 3 && daysUntilIssue >= 0) {
           maintenanceRecommendations.push({
@@ -251,7 +254,8 @@ const Analytics: React.FC = () => {
       // Recommend if too many issues recently
       const recentIssues = issueEntries.filter(e => {
         const d = new Date(e.date_of_entry);
-        const now = new Date();
+        const vancouverTodayStr = getVancouverDate();
+        const now = new Date(vancouverTodayStr);
         const diffDays = (now.getTime() - d.getTime()) / (1000 * 3600 * 24);
         return diffDays <= 7;
       }).length;
@@ -343,7 +347,7 @@ const Analytics: React.FC = () => {
       mtbfByMachine,
       mttrByMachine,
       consumptionData,
-      maintenanceRecommendations: Array.from(new Set(maintenanceRecommendations.map(JSON.stringify))).map(JSON.parse) // Deduplicate
+      maintenanceRecommendations: Array.from(new Set(maintenanceRecommendations.map(rec => JSON.stringify(rec)))).map(str => JSON.parse(str as string)) // Deduplicate
     };
   };
 
@@ -709,7 +713,7 @@ const Analytics: React.FC = () => {
                     <div key={issue.id} className="border-b pb-3 last:border-0">
                       <div className="flex justify-between items-start mb-1">
                         <span className="font-semibold text-sm">
-                          {new Date(issue.date_of_entry).toLocaleDateString()}
+                          {formatVancouverDateTime(issue.date_of_entry, false)}
                         </span>
                         <Badge variant="outline" className="text-xs">
                           {issue.filled_by}

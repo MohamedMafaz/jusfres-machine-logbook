@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MaintenanceEntry } from '@/types/maintenance';
 import { getHomeBaseForUser } from '@/constants/locations';
+import { getVancouverDate, getVancouverTime, getCurrentIsoTimestamp } from '@/lib/utils';
 import {
   Plus,
   ClipboardList,
@@ -36,7 +37,7 @@ const Dashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [formData, setFormData] = useState<Partial<MaintenanceEntry>>({
     filled_by: user?.displayName || '',
-    date_of_entry: new Date().toISOString().split('T')[0],
+    date_of_entry: getVancouverDate(),
     current_step: 1,
   });
   const [currentEntry, setCurrentEntry] = useState<string | null>(null);
@@ -87,8 +88,8 @@ const Dashboard: React.FC = () => {
 
       const newFormData: Partial<MaintenanceEntry> = {
         filled_by: user?.displayName || '',
-        date_of_entry: new Date().toISOString().split('T')[0],
-        start_time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+        date_of_entry: getVancouverDate(),
+        start_time: getVancouverTime(),
         start_location: getHomeBaseForUser(user?.displayName || ''),
         current_step: 1,
       };
@@ -122,7 +123,7 @@ const Dashboard: React.FC = () => {
       // Fallback to empty form
       setFormData({
         filled_by: user?.displayName || '',
-        date_of_entry: new Date().toISOString().split('T')[0],
+        date_of_entry: getVancouverDate(),
         current_step: 1,
       });
       setCurrentEntry(null);
@@ -196,14 +197,14 @@ const Dashboard: React.FC = () => {
       const updates: Partial<MaintenanceEntry> = {
         current_step: step + 1,
         [`step${step}_completed`]: true,
-        [`step${step}_completed_at`]: new Date().toISOString(),
+        [`step${step}_completed_at`]: getCurrentIsoTimestamp(),
       };
 
       // If step 2 is completed, we are done (since we merged step 2 and 3)
       // So we must also mark step 3 as completed to satisfy the "Trip Completed" logic
       if (step === 2) {
         updates.step3_completed = true;
-        updates.step3_completed_at = new Date().toISOString();
+        updates.step3_completed_at = getCurrentIsoTimestamp();
 
         // Calculate distance and duration
         if (formData.odometer_start && formData.odometer_end) {

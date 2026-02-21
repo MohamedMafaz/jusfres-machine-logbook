@@ -52,6 +52,7 @@ export interface MaintenanceEntry {
   // Calculated fields
   distance?: number;
   duration_minutes?: number;
+  time_spent_machine?: number;
 
   // Timestamps
   created_at?: string;

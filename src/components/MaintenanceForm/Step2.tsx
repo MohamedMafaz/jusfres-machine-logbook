@@ -244,6 +244,32 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
               />
             </div>
 
+            {/* Orange Refill Count */}
+            <div className="space-y-2">
+              <Label htmlFor="orange_refill">Orange Refill Count</Label>
+              <Input
+                id="orange_refill"
+                type="number"
+                min={0}
+                value={formData.orange_refill ?? ''}
+                onChange={e => onUpdate({ orange_refill: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+
+            {/* Apple Refill Count */}
+            <div className="space-y-2">
+              <Label htmlFor="apple_refill">Apple Refill Count</Label>
+              <Input
+                id="apple_refill"
+                type="number"
+                min={0}
+                value={formData.apple_refill ?? ''}
+                onChange={e => onUpdate({ apple_refill: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="temperature" className="flex items-center gap-2">
                 <Thermometer className="w-4 h-4" />

@@ -20,16 +20,19 @@ import {
   AlertCircle,
   Calendar,
   BarChart3,
-  PlayCircle
+  PlayCircle,
+  ShieldAlert
 } from 'lucide-react';
 import Step1 from './MaintenanceForm/Step1';
 import Step2 from './MaintenanceForm/Step2';
 import EntriesPage from './EntriesPage';
 import CompletionScreen from './CompletionScreen';
 import NotificationToast from './NotificationToast';
+import MaintenanceDetailsDialog from './MaintenanceDetailsDialog';
+import IssueMonitoring from './IssueMonitoring';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
-type View = 'dashboard' | 'form' | 'entries' | 'completion';
+type View = 'dashboard' | 'form' | 'entries' | 'completion' | 'monitoring';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -322,6 +325,16 @@ const Dashboard: React.FC = () => {
     return <EntriesPage onBack={() => setCurrentView('dashboard')} />;
   }
 
+  if (currentView === 'monitoring') {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-4">
+          <IssueMonitoring onBack={() => setCurrentView('dashboard')} />
+        </div>
+      </div>
+    );
+  }
+
   if (currentView === 'completion') {
     return (
       <CompletionScreen
@@ -399,15 +412,15 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-maintenance transition-shadow" onClick={() => navigate('/analytics')}>
+          <Card className="cursor-pointer hover:shadow-maintenance transition-shadow" onClick={() => setCurrentView('monitoring')}>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
+                  <ShieldAlert className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Analytics</h3>
-                  <p className="text-muted-foreground">View reports, charts and predictions</p>
+                  <h3 className="font-semibold text-lg">Issue Monitoring</h3>
+                  <p className="text-muted-foreground">Monitor and track machine issues</p>
                 </div>
               </div>
             </CardContent>
@@ -485,26 +498,11 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
         {/* Entry Details Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Entry Details</DialogTitle>
-              <DialogDescription>
-                {selectedEntry && (
-                  <div className="space-y-2">
-                    <div><strong>Filled By:</strong> {selectedEntry.filled_by}</div>
-                    <div><strong>Date:</strong> {selectedEntry.date_of_entry}</div>
-                    <div><strong>Start Location:</strong> {selectedEntry.start_location}</div>
-                    <div><strong>End Location:</strong> {selectedEntry.end_location}</div>
-                    <div><strong>Tasks Completed:</strong> {Array.isArray(selectedEntry.tasks_completed) ? selectedEntry.tasks_completed.join(', ') : selectedEntry.tasks_completed}</div>
-                    <div><strong>Issues/Errors:</strong> {selectedEntry.issues_errors}</div>
-                    {/* Add more fields as needed */}
-                  </div>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
+        <MaintenanceDetailsDialog
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          entry={selectedEntry}
+        />
       </div>
     </div>
   );

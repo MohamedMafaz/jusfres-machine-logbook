@@ -21,6 +21,7 @@ export interface MaintenanceEntry {
   orange_custom_count_per_box?: number;
 
   // Apple Box Counts
+  apple_box_count?: number;
   apple_88_count?: number;
   apple_113_count?: number;
   apple_custom_box_count?: number;
@@ -43,6 +44,7 @@ export interface MaintenanceEntry {
   orange_refill?: number;
   orange_refill_type?: string;
   orange_refill_tasks?: string[];
+  apple_refill?: number;
   temperature?: number;
   refrigerant_water_status?: string;
   water_cleaning_status?: string;

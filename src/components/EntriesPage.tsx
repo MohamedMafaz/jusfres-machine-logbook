@@ -13,6 +13,7 @@ import { MaintenanceEntry } from '@/types/maintenance';
 import { getHomeBaseForUser } from '@/constants/locations';
 import { formatVancouverDateTime } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MaintenanceDetailsDialog from './MaintenanceDetailsDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
@@ -398,6 +399,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       'Apple (113)',
       'Apple Custom Boxes',
       'Apple Custom Count/Box',
+      'Apple Refill',
       'Orange Refill',
       'Orange Refill Type',
       'Orange Refill Tasks',
@@ -452,6 +454,7 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
         entry.apple_113_count || '',
         entry.apple_custom_box_count || '',
         entry.apple_custom_count_per_box || '',
+        entry.apple_refill || '',
         entry.orange_refill || '',
         `"${entry.orange_refill_type || ''}"`,
         `"${Array.isArray(entry.orange_refill_tasks) ? entry.orange_refill_tasks.join(', ') : ''}"`,
@@ -603,169 +606,6 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
     </Card>
   );
 
-  const renderDetailsModal = () => (
-    <Dialog open={showDetails} onOpenChange={setShowDetails}>
-      <DialogContent className={`${isMobile ? 'w-[98vw] max-w-none px-1 py-2' : 'max-w-2xl'} max-h-[95vh] overflow-y-auto`}>
-        <DialogHeader>
-          <div className="flex items-center justify-between pr-8">
-            <DialogTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : 'text-xl'}`}>
-              <Calendar className="w-5 h-5" />
-              Maintenance Entry Details
-            </DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handlePreviousEntry}
-                disabled={currentEntryIndex <= 0}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="text-xs text-muted-foreground min-w-[60px] text-center">
-                {currentEntryIndex + 1} / {filteredEntries.length}
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleNextEntry}
-                disabled={currentEntryIndex >= filteredEntries.length - 1}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </DialogHeader>
-        {selectedEntry && (
-          <div className="space-y-6">
-            {/* Basic Info */}
-            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">User:</span>
-                  <span>{selectedEntry.filled_by}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">Date:</span>
-                  <span>{formatVancouverDateTime(selectedEntry.date_of_entry, false)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">Status:</span>
-                  {getStatusBadge(selectedEntry)}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">Start:</span>
-                  <span>{selectedEntry.start_location || '-'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">End:</span>
-                  <span>{selectedEntry.end_location || '-'}</span>
-                </div>
-                {selectedEntry.distance && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">Distance:</span>
-                    <span>{selectedEntry.distance} km</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <Separator />
-            {/* Times */}
-            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}>
-              <div className="space-y-2">
-                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Clock className="w-4 h-4" /> Time Information </h3>
-                <div className="space-y-1 text-sm">
-                  <div>Start: {selectedEntry.start_time || '-'}</div>
-                  <div>End: {selectedEntry.end_time || '-'}</div>
-                  {selectedEntry.duration_minutes ? (
-                    <div>Duration: {selectedEntry.duration_minutes} minutes</div>
-                  ) : null}
-                  {selectedEntry.time_spent_machine ? (
-                    <div>Machine Time: {selectedEntry.time_spent_machine} minutes</div>
-                  ) : null}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Thermometer className="w-4 h-4" /> Environmental Data </h3>
-                <div className="space-y-1 text-sm">
-                  <div>Temperature: {selectedEntry.temperature || '-'}°C</div>
-                  <div>Battery Start: {selectedEntry.battery_start || '-'}%</div>
-                  <div>Battery End: {selectedEntry.battery_end || '-'}%</div>
-                  <div>Odometer Start: {selectedEntry.odometer_start || '-'} km</div>
-                  <div>Odometer End: {selectedEntry.odometer_end || '-'} km</div>
-                </div>
-              </div>
-            </div>
-            <Separator />
-            {/* Inventory */}
-            <div className="space-y-2">
-              <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Package className="w-4 h-4" /> Inventory & Supplies </h3>
-              <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 md:grid-cols-4'}`}>
-                <div>Boxes (88): {selectedEntry.orange_88_count ?? '-'}</div>
-                <div>Boxes (113): {selectedEntry.orange_113_count ?? '-'}</div>
-                <div>Custom Boxes: {selectedEntry.orange_custom_box_count ?? '-'}</div>
-                <div>Orange Refill: {selectedEntry.orange_refill || '-'}</div>
-                <div>Cup Availability: {selectedEntry.cup_availability || '-'}</div>
-                <div>Lid Availability: {selectedEntry.lid_availability || '-'}</div>
-              </div>
-            </div>
-            <Separator />
-            {/* Water Status */}
-            <div className={`${isMobile ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-1 md:grid-cols-2 gap-4'}`}>
-              <div className="space-y-2">
-                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Droplets className="w-4 h-4" /> Water Management </h3>
-                <div className="space-y-1 text-sm">
-                  <div>Cleaning Water: {selectedEntry.water_cleaning_status || '-'}</div>
-                  <div>Refrigerant Water: {selectedEntry.refrigerant_water_status || '-'}</div>
-                  <div>Filled Cleaning: {typeof selectedEntry.filled_cleaning_water === 'string' ? selectedEntry.filled_cleaning_water : (selectedEntry.filled_cleaning_water === true ? 'Yes' : selectedEntry.filled_cleaning_water === false ? 'No' : '-')}</div>
-                  <div>Filled Refrigerant: {typeof selectedEntry.filled_refrigerant_water === 'string' ? selectedEntry.filled_refrigerant_water : (selectedEntry.filled_refrigerant_water === true ? 'Yes' : selectedEntry.filled_refrigerant_water === false ? 'No' : '-')}</div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <Package className="w-4 h-4" /> Items Carried </h3>
-                <div className="text-sm"> {
-                  selectedEntry.items_carried
-                    ? (Array.isArray(selectedEntry.items_carried)
-                      ? selectedEntry.items_carried.join(', ')
-                      : (typeof selectedEntry.items_carried === 'string' && selectedEntry.items_carried.includes(',')
-                        ? selectedEntry.items_carried.split(',').map(i => i.trim()).filter(Boolean).join(', ')
-                        : selectedEntry.items_carried))
-                    : '-'
-                } </div>
-              </div>
-            </div>
-            <Separator />
-            {/* Tasks */}
-            {selectedEntry.tasks_completed && (
-              <>
-                <div className="space-y-2">
-                  <h3 className={`font-semibold flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}> <CheckCircle className="w-4 h-4" /> Tasks Completed </h3>
-                  <div className="text-sm bg-green-50 p-3 rounded-lg"> {selectedEntry.tasks_completed} </div>
-                </div>
-                <Separator />
-              </>
-            )}
-            {/* Issues */}
-            {selectedEntry.issues_errors && (
-              <div className="space-y-2">
-                <h3 className={`font-semibold flex items-center gap-2 text-orange-600 ${isMobile ? 'text-base' : ''}`}> <AlertTriangle className="w-4 h-4" /> Issues & Errors </h3>
-                <div className="text-sm bg-orange-50 p-3 rounded-lg"> {selectedEntry.issues_errors} </div>
-              </div>
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -1385,7 +1225,15 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
         </Tabs>
 
         {/* Details Modal */}
-        {renderDetailsModal()}
+        <MaintenanceDetailsDialog
+          open={showDetails}
+          onOpenChange={setShowDetails}
+          entry={selectedEntry}
+          onPreviousEntry={handlePreviousEntry}
+          onNextEntry={handleNextEntry}
+          currentIndex={currentEntryIndex}
+          totalEntries={filteredEntries.length}
+        />
 
       </div>
     </div>

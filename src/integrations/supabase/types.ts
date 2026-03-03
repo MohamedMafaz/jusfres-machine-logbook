@@ -54,6 +54,17 @@ export type Database = {
           time_spent_machine: number | null
           updated_at: string
           water_cleaning_status: string | null
+          orange_88_count: number | null
+          orange_113_count: number | null
+          orange_custom_box_count: number | null
+          orange_custom_count_per_box: number | null
+          apple_box_count: number | null
+          apples_placed: number | null
+          apple_88_count: number | null
+          apple_113_count: number | null
+          apple_custom_box_count: number | null
+          apple_custom_count_per_box: number | null
+          apple_refill: number | null
         }
         Insert: {
           battery_end?: number | null
@@ -94,6 +105,16 @@ export type Database = {
           time_spent_machine?: number | null
           updated_at?: string
           water_cleaning_status?: string | null
+          orange_88_count?: number | null
+          orange_113_count?: number | null
+          orange_custom_box_count?: number | null
+          orange_custom_count_per_box?: number | null
+          apple_box_count?: number | null
+          apples_placed?: number | null
+          apple_88_count?: number | null
+          apple_113_count?: number | null
+          apple_custom_box_count?: number | null
+          apple_custom_count_per_box?: number | null
         }
         Update: {
           battery_end?: number | null
@@ -134,6 +155,16 @@ export type Database = {
           time_spent_machine?: number | null
           updated_at?: string
           water_cleaning_status?: string | null
+          orange_88_count?: number | null
+          orange_113_count?: number | null
+          orange_custom_box_count?: number | null
+          orange_custom_count_per_box?: number | null
+          apple_box_count?: number | null
+          apples_placed?: number | null
+          apple_88_count?: number | null
+          apple_113_count?: number | null
+          apple_custom_box_count?: number | null
+          apple_custom_count_per_box?: number | null
         }
         Relationships: []
       }

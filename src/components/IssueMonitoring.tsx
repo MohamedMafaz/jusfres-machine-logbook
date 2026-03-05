@@ -56,12 +56,12 @@ const IssueMonitoring: React.FC<IssueMonitoringProps> = ({ onBack }) => {
       const { data, error } = await supabase
         .from('maintenance_entries')
         .select('*')
-        .not('issues_errors', 'is', null)
-        .neq('issues_errors', '')
+        .or('issues_errors.neq."",apple_issues_errors.neq.""')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setEntries(data || []);
+      // Clean up nulls implicitly in javascript
+      const validEntries = ((data || []) as unknown as MaintenanceEntry[]).filter(e => e.issues_errors || e.apple_issues_errors);
+      setEntries(validEntries);
     } catch (error) {
       console.error('Error loading issues:', error);
     } finally {
@@ -80,11 +80,12 @@ const IssueMonitoring: React.FC<IssueMonitoringProps> = ({ onBack }) => {
 
   const filteredEntries = useMemo(() => {
     let result = entries.filter(entry => {
+      const combinedIssues = [entry.issues_errors, entry.apple_issues_errors].filter(Boolean).join(' | ');
       const matchesSearch = !searchTerm || [
         entry.filled_by,
         entry.start_location,
         entry.end_location,
-        entry.issues_errors
+        combinedIssues
       ].some(val => val?.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesUser = userFilter === 'all' || entry.filled_by === userFilter;
@@ -116,7 +117,10 @@ const IssueMonitoring: React.FC<IssueMonitoringProps> = ({ onBack }) => {
         `"${new Date(entry.date_of_entry).toLocaleDateString()}"`,
         `"${entry.filled_by}"`,
         `"${entry.start_location}"`,
-        `"${(entry.issues_errors || '').replace(/"/g, '""')}"`,
+        `"${[
+          entry.issues_errors ? `Orange: ${entry.issues_errors}` : '',
+          entry.apple_issues_errors ? `Apple: ${entry.apple_issues_errors}` : ''
+        ].filter(Boolean).join(' | ').replace(/"/g, '""')}"`,
         `"${entry.step3_completed ? 'Resolved' : 'Pending'}"`
       ];
       csvRows.push(row.join(','));
@@ -265,8 +269,19 @@ const IssueMonitoring: React.FC<IssueMonitoringProps> = ({ onBack }) => {
                         {new Date(entry.date_of_entry).toLocaleDateString()}
                       </Badge>
                     </div>
-                    <div className="text-sm text-foreground bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-100 dark:border-red-900/20 font-medium">
-                      {entry.issues_errors}
+                    <div className="flex flex-col gap-2">
+                      {entry.issues_errors && (
+                        <div className="text-sm text-foreground bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-100 dark:border-red-900/20 font-medium">
+                          <span className="font-bold text-xs uppercase mr-2 text-red-800">Orange:</span>
+                          {entry.issues_errors}
+                        </div>
+                      )}
+                      {entry.apple_issues_errors && (
+                        <div className="text-sm text-foreground bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-100 dark:border-red-900/20 font-medium">
+                          <span className="font-bold text-xs uppercase mr-2 text-red-800">Apple:</span>
+                          {entry.apple_issues_errors}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <MapPin className="w-3 h-3" />
@@ -309,8 +324,19 @@ const IssueMonitoring: React.FC<IssueMonitoringProps> = ({ onBack }) => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 p-2 rounded border border-red-100 dark:border-red-900/20 text-sm font-medium">
-                        {entry.issues_errors}
+                      <div className="flex flex-col gap-2">
+                        {entry.issues_errors && (
+                          <div className="bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 p-2 rounded border border-red-100 dark:border-red-900/20 text-sm font-medium">
+                            <span className="font-bold text-xs uppercase mr-2 text-red-800">Orange:</span>
+                            {entry.issues_errors}
+                          </div>
+                        )}
+                        {entry.apple_issues_errors && (
+                          <div className="bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 p-2 rounded border border-red-100 dark:border-red-900/20 text-sm font-medium">
+                            <span className="font-bold text-xs uppercase mr-2 text-red-800">Apple:</span>
+                            {entry.apple_issues_errors}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

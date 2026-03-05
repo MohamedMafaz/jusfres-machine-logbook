@@ -186,6 +186,9 @@ const MaintenanceDetailsDialog: React.FC<MaintenanceDetailsDialogProps> = ({
                       <Thermometer className="w-2.5 h-2.5" /> Temp
                     </p>
                     <p className="font-bold text-blue-700 dark:text-blue-300">{entry.temperature ? `${entry.temperature}°C` : '-'}</p>
+                    {entry.apple_temperature != null && (
+                      <p className="font-bold text-red-700 dark:text-red-300 text-[10px] mt-1">Apple: {entry.apple_temperature}°C</p>
+                    )}
                   </div>
                   <div className="p-2 bg-orange-50/50 dark:bg-orange-900/10 rounded-md border border-orange-100 dark:border-orange-900/30">
                     <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase flex items-center gap-1">
@@ -280,11 +283,13 @@ const MaintenanceDetailsDialog: React.FC<MaintenanceDetailsDialogProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="p-2 border rounded-md">
                     <p className="text-[10px] text-muted-foreground uppercase">Cup Avail.</p>
-                    <p className="font-medium">{entry.cup_availability ?? '-'} Reels</p>
+                    <p className="font-medium text-orange-600 text-xs">O: {entry.cup_availability ?? '-'} Reels</p>
+                     <p className="font-medium text-red-600 text-xs">A: {entry.apple_cup_availability ?? '-'} Reels</p>
                   </div>
                   <div className="p-2 border rounded-md">
                     <p className="text-[10px] text-muted-foreground uppercase">Lid Avail.</p>
-                    <p className="font-medium">{entry.lid_availability ?? '-'} Reels</p>
+                    <p className="font-medium text-orange-600 text-xs">O: {entry.lid_availability ?? '-'} Reels</p>
+                     <p className="font-medium text-red-600 text-xs">A: {entry.apple_lid_availability ?? '-'} Reels</p>
                   </div>
                 </div>
                 <div className="p-3 border rounded-md bg-muted/20">
@@ -332,7 +337,9 @@ const MaintenanceDetailsDialog: React.FC<MaintenanceDetailsDialogProps> = ({
                   <CheckCircle className="w-4 h-4 text-green-500" /> Tasks Performed
                 </h3>
                 <div className="p-3 bg-green-50/50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/20 rounded-lg text-sm leading-relaxed">
-                  {entry.tasks_completed || 'No specific tasks documented.'}
+                  {entry.tasks_completed && <div><span className="font-bold text-orange-700">Orange:</span> {entry.tasks_completed}</div>}
+                   {entry.apple_tasks_completed && <div><span className="font-bold text-red-700">Apple:</span> {entry.apple_tasks_completed}</div>}
+                   {!entry.tasks_completed && !entry.apple_tasks_completed && 'No specific tasks documented.'}
                 </div>
               </div>
 
@@ -342,7 +349,8 @@ const MaintenanceDetailsDialog: React.FC<MaintenanceDetailsDialogProps> = ({
                     <AlertTriangle className="w-4 h-4 text-red-500" /> Issues & Errors
                   </h3>
                   <div className="p-3 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg text-sm font-medium text-red-700 dark:text-red-300 leading-relaxed shadow-sm">
-                    {entry.issues_errors}
+                    {entry.issues_errors && <div><span className="font-bold text-orange-800">Orange:</span> {entry.issues_errors}</div>}
+                     {entry.apple_issues_errors && <div className="mt-1"><span className="font-bold text-red-800">Apple:</span> {entry.apple_issues_errors}</div>}
                   </div>
                 </div>
               )}

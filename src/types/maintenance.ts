@@ -35,7 +35,7 @@ export interface MaintenanceEntry {
   oranges_placed?: number;
   apples_placed?: number;
 
-  // Step 3 fields (Merged into Step 2)
+  // Oranges Machine specific fields (legacy names kept for compatibility)
   cup_availability?: number;
   lid_availability?: number;
   lid_availability_type?: string;
@@ -44,12 +44,23 @@ export interface MaintenanceEntry {
   orange_refill?: number;
   orange_refill_type?: string;
   orange_refill_tasks?: string[];
-  apple_refill?: number;
   temperature?: number;
   refrigerant_water_status?: string;
   water_cleaning_status?: string;
   filled_cleaning_water?: boolean;
   filled_refrigerant_water?: boolean;
+
+  // Apple Machine specific fields
+  apple_refill?: number;
+  apple_cup_availability?: number;
+  apple_lid_availability?: number;
+  apple_tasks_completed?: string;
+  apple_issues_errors?: string;
+  apple_temperature?: number;
+  apple_refrigerant_water_status?: string;
+  apple_water_cleaning_status?: string;
+  apple_filled_cleaning_water?: boolean;
+  apple_filled_refrigerant_water?: boolean;
 
   // Calculated fields
   distance?: number;

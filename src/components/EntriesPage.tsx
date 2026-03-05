@@ -144,8 +144,10 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
         entry.start_location,
         entry.end_location,
         entry.tasks_completed,
-        entry.issues_errors
-      ].some(val => val?.toLowerCase().includes(searchTerm.toLowerCase()));
+        entry.apple_tasks_completed,
+        entry.issues_errors,
+        entry.apple_issues_errors
+      ].some(val => val?.toString().toLowerCase().includes(searchTerm.toLowerCase()));
 
       // User filter
       const matchesUser = userFilter === 'all' || entry.filled_by === userFilter;
@@ -165,13 +167,15 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       })();
 
       // Tasks Filter
+      const combinedTasks = [entry.tasks_completed, entry.apple_tasks_completed].filter(Boolean).join(' | ');
       const matchesTasks = tasksFilter.length === 0 || tasksFilter.some(task => 
-        entry.tasks_completed?.toLowerCase().includes(task.toLowerCase())
+        combinedTasks.toLowerCase().includes(task.toLowerCase())
       );
 
       // Issues Filter
+      const combinedIssues = [entry.issues_errors, entry.apple_issues_errors].filter(Boolean).join(' | ');
       const matchesIssues = issuesFilter.length === 0 || issuesFilter.some(issue => 
-        entry.issues_errors?.toLowerCase().includes(issue.toLowerCase())
+        combinedIssues.toLowerCase().includes(issue.toLowerCase())
       );
 
       // Items Carried Filter
@@ -411,8 +415,17 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
       'Filled Cleaning Water',
       'Filled Refrigerant Water',
       'Items Carried',
-      'Tasks Completed',
-      'Issues/Errors',
+      'Tasks Completed (Orange)',
+      'Issues/Errors (Orange)',
+      'Tasks Completed (Apple)',
+      'Issues/Errors (Apple)',
+      'Temperature (Apple)',
+      'Cup Availability (Apple)',
+      'Lid Availability (Apple)',
+      'Cleaning Water Status (Apple)',
+      'Refrigerant Water Status (Apple)',
+      'Filled Cleaning Water (Apple)',
+      'Filled Refrigerant Water (Apple)',
       'Status',
       'Created At',
       'Updated At',
@@ -472,6 +485,15 @@ const EntriesPage: React.FC<EntriesPageProps> = ({ onBack }) => {
             : (entry.items_carried || ''))}"`,
         `"${entry.tasks_completed || ''}"`,
         `"${entry.issues_errors || ''}"`,
+        `"${entry.apple_tasks_completed || ''}"`,
+        `"${entry.apple_issues_errors || ''}"`,
+        entry.apple_temperature || '',
+        entry.apple_cup_availability || '',
+        entry.apple_lid_availability || '',
+        `"${entry.apple_water_cleaning_status || ''}"`,
+        `"${entry.apple_refrigerant_water_status || ''}"`,
+        entry.apple_filled_cleaning_water ? 'Yes' : 'No',
+        entry.apple_filled_refrigerant_water ? 'Yes' : 'No',
         `"${status}"`,
         `"${formatVancouverDateTime(entry.created_at)}"`,
         `"${formatVancouverDateTime(entry.updated_at)}"`,

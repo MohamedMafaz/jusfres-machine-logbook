@@ -8,9 +8,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { MaintenanceEntry } from '@/types/maintenance';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { getHomeBaseForUser } from '@/constants/locations';
 import { getVancouverDate, getVancouverTime, getCurrentIsoTimestamp } from '@/lib/utils';
 import {
+  MapPin,
+  Map,
   Plus,
   ClipboardList,
   LogOut,
@@ -48,6 +52,9 @@ const Dashboard: React.FC = () => {
   const [recentEntries, setRecentEntries] = useState<MaintenanceEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<MaintenanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
+  const [newLocationName, setNewLocationName] = useState("");
+  const [isAddingLocation, setIsAddingLocation] = useState(false);
 
   // Load recent entries for dashboard
   useEffect(() => {
@@ -172,6 +179,39 @@ const Dashboard: React.FC = () => {
       });
     } catch (error) {
       console.error('Error sending notification:', error);
+    }
+  };
+
+  const handleAddLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLocationName.trim()) return;
+
+    setIsAddingLocation(true);
+    try {
+      const { error } = await supabase
+        .from('locations' as any)
+        .insert([{ 
+          name: newLocationName.trim(), 
+          category: user?.displayName === 'Nematullah' ? 'nematullah' : 'default' 
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Location "${newLocationName}" added successfully.`,
+      });
+      setNewLocationName("");
+      setIsLocationDialogOpen(false);
+    } catch (error: any) {
+      console.error('Error adding location:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add location. It might already exist.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingLocation(false);
     }
   };
 
@@ -425,6 +465,19 @@ const Dashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          <Card className="cursor-pointer hover:shadow-maintenance transition-shadow" onClick={() => setIsLocationDialogOpen(true)}>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Add New Location</h3>
+                  <p className="text-muted-foreground">Create a new location for all users</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Entries */}
@@ -503,6 +556,47 @@ const Dashboard: React.FC = () => {
           onOpenChange={setIsModalOpen}
           entry={selectedEntry}
         />
+
+        {/* Add Location Dialog */}
+        <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Location</DialogTitle>
+              <DialogDescription>
+                This location will be available in the dropdowns for all users.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAddLocation} className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="location_name">Location Name</Label>
+                <Input
+                  id="location_name"
+                  placeholder="e.g. Richmond Center"
+                  value={newLocationName}
+                  onChange={(e) => setNewLocationName(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsLocationDialogOpen(false)}
+                  disabled={isAddingLocation}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isAddingLocation || !newLocationName.trim()}
+                >
+                  {isAddingLocation ? "Adding..." : "Add Location"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getLocationsForUser } from '@/constants/locations';
+import { getDynamicLocations, getLocationsForUser } from '@/constants/locations';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Step2Props {
@@ -21,7 +21,20 @@ interface Step2Props {
 
 const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }) => {
   const { user } = useAuth();
-  const locations = getLocationsForUser(user?.displayName || "");
+  const [locations, setLocations] = React.useState<string[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = React.useState(true);
+
+  // Load locations dynamically
+  React.useEffect(() => {
+    const loadLocations = async () => {
+      setIsLoadingLocations(true);
+      const category = user?.displayName === 'Nematullah' ? 'nematullah' : 'default';
+      const dynamicLocations = await getDynamicLocations(category);
+      setLocations(dynamicLocations);
+      setIsLoadingLocations(false);
+    };
+    loadLocations();
+  }, [user?.displayName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,17 +108,19 @@ const Step2: React.FC<Step2Props> = ({ formData, onUpdate, onSubmit, isLoading }
           </CardHeader>
           <CardContent className="space-y-6">
 
-            {/* End Location */}
-            <div className="space-y-2">
+             <div className="space-y-2">
               <Label htmlFor="end_location">End Location *</Label>
               <select
                 id="end_location"
-                value={formData.end_location || ''}
+                value={formData.end_location || ""}
                 onChange={(e) => onUpdate({ end_location: e.target.value })}
                 required
-                className="w-full border rounded px-3 py-2 bg-background text-foreground"
+                disabled={isLoadingLocations}
+                className={`w-full border rounded px-3 py-2 bg-background text-foreground ${isLoadingLocations ? 'opacity-50' : ''}`}
               >
-                <option value="" disabled>Select ending location</option>
+                <option value="" disabled>
+                  {isLoadingLocations ? "Loading locations..." : "Select ending location"}
+                </option>
                 {locations.map((location) => (
                   <option key={location} value={location}>
                     {location}

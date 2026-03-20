@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ClipboardList, MapPin, Clock, Gauge, Battery } from "lucide-react";
 import { MaintenanceEntry } from "@/types/maintenance";
 import { Slider } from "@/components/ui/slider";
-import { getLocationsForUser } from "@/constants/locations";
+import { getDynamicLocations, getLocationsForUser } from "@/constants/locations";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Step1Props {
@@ -30,7 +30,20 @@ const Step1: React.FC<Step1Props> = ({
   isLoading,
 }) => {
   const { user } = useAuth();
-  const locations = getLocationsForUser(user?.displayName || "");
+  const [locations, setLocations] = React.useState<string[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = React.useState(true);
+
+  // Load locations dynamically
+  React.useEffect(() => {
+    const loadLocations = async () => {
+      setIsLoadingLocations(true);
+      const category = user?.displayName === 'Nematullah' ? 'nematullah' : 'default';
+      const dynamicLocations = await getDynamicLocations(category);
+      setLocations(dynamicLocations);
+      setIsLoadingLocations(false);
+    };
+    loadLocations();
+  }, [user?.displayName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,16 +89,19 @@ const Step1: React.FC<Step1Props> = ({
                 readOnly
                 className="bg-muted"
               />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="start_location">Start Location *</Label>
               <select
                 id="start_location"
                 value={formData.start_location || ""}
                 onChange={(e) => onUpdate({ start_location: e.target.value })}
                 required
-                disabled={true}
-                className="w-full border rounded px-3 py-2 bg-muted text-foreground cursor-not-allowed"
+                disabled={isLoadingLocations}
+                className={`w-full border rounded px-3 py-2 bg-background text-foreground ${isLoadingLocations ? 'opacity-50' : ''}`}
               >
                 <option value="" disabled>
-                  Select starting location
+                  {isLoadingLocations ? "Loading locations..." : "Select starting location"}
                 </option>
                 {locations.map((location) => (
                   <option key={location} value={location}>
@@ -94,6 +110,7 @@ const Step1: React.FC<Step1Props> = ({
                 ))}
               </select>
             </div>
+
 
             {/* Start Time */}
             <div className="space-y-2">

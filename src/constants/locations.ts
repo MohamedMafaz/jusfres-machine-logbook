@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 // Default locations for all users except Nematullah
 export const DEFAULT_LOCATIONS = [
   // Original Locations
@@ -62,3 +64,28 @@ export const LOCATIONS = DEFAULT_LOCATIONS;
 export type Location =
   | (typeof DEFAULT_LOCATIONS)[number]
   | (typeof NEMATULLAH_LOCATIONS)[number];
+
+// Fetch locations from Supabase with static fallback
+export const getDynamicLocations = async (category: string = 'default'): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('locations' as any)
+      .select('name')
+      .eq('category', category)
+      .order('name');
+    
+    if (error) {
+      console.warn('Using fallback locations due to error:', error);
+      return category === 'nematullah' ? [...NEMATULLAH_LOCATIONS] : [...DEFAULT_LOCATIONS];
+    }
+    
+    if (!data || data.length === 0) {
+      return category === 'nematullah' ? [...NEMATULLAH_LOCATIONS] : [...DEFAULT_LOCATIONS];
+    }
+    
+    return (data as any[]).map(l => l.name);
+  } catch (error) {
+    console.error('Error in getDynamicLocations:', error);
+    return category === 'nematullah' ? [...NEMATULLAH_LOCATIONS] : [...DEFAULT_LOCATIONS];
+  }
+};
